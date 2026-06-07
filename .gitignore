@@ -40,6 +40,7 @@ Thumbs.db
 # Kaggle
 kaggle.json
 
-# Local-dev packs
+# Local-dev packs & skill (contains credentials, machine-specific)
 .packs/
 .pack.conf
+.claude/skills/local-dev/
