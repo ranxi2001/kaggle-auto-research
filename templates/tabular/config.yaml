@@ -1,0 +1,37 @@
+competition:
+  name: ""
+  url: ""
+  type: "tabular"
+  metric: "rmse"
+  metric_direction: "minimize"
+  deadline: ""
+
+data:
+  train: "data/raw/train.csv"
+  test: "data/raw/test.csv"
+  sample_submission: "data/raw/sample_submission.csv"
+  target_column: "target"
+  id_column: "id"
+
+features:
+  version: 1
+  enabled:
+    - "basic_stats"
+    - "interactions"
+    - "target_encoding"
+    - "aggregations"
+
+model:
+  primary: "lightgbm"
+  cv_strategy: "stratified_kfold"
+  cv_folds: 5
+  seed: 42
+
+submission:
+  auto_submit: false
+  best_threshold: 0.01
+  max_daily: 5
+
+pipeline:
+  stages: ["research", "eda", "features", "train", "evaluate", "submit"]
+  iteration_limit: 10

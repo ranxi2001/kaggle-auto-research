@@ -1,0 +1,41 @@
+# Data
+workspaces/*/data/raw/
+workspaces/*/data/processed/
+workspaces/*/data/features/
+workspaces/*/models/
+workspaces/*/submissions/
+workspaces/*/.state/
+*.parquet
+*.h5
+*.pkl
+*.joblib
+*.npy
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.json
+!templates/**/*.json
+!package.json
+
+# Kaggle
+kaggle.json

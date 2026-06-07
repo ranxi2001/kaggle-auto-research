@@ -1,0 +1,31 @@
+competition:
+  deadline: ''
+  metric: accuracy
+  metric_direction: maximize
+  name: titanic
+  type: tabular
+  url: https://www.kaggle.com/competitions/titanic
+data:
+  id_column: PassengerId
+  sample_submission: data/raw/gender_submission.csv
+  target_column: Survived
+  test: data/raw/test.csv
+  train: data/raw/train.csv
+model:
+  cv_folds: 5
+  cv_strategy: stratified_kfold
+  primary: lightgbm
+  seed: 42
+pipeline:
+  iteration_limit: 10
+  stages:
+  - research
+  - eda
+  - features
+  - train
+  - evaluate
+  - submit
+submission:
+  auto_submit: true
+  best_threshold: 0.01
+  max_daily: 5

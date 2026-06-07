@@ -1,0 +1,36 @@
+competition:
+  name: ""
+  url: ""
+  type: "llm"
+  metric: "log_loss"
+  metric_direction: "minimize"
+  deadline: ""
+
+data:
+  train: "data/raw/train.csv"
+  test: "data/raw/test.csv"
+  sample_submission: "data/raw/sample_submission.csv"
+  target_column: "label"
+  id_column: "id"
+
+features:
+  version: 1
+  enabled:
+    - "text_stats"
+    - "token_count"
+    - "embeddings"
+
+model:
+  primary: "deberta"
+  cv_strategy: "group_kfold"
+  cv_folds: 5
+  seed: 42
+
+submission:
+  auto_submit: false
+  best_threshold: 0.005
+  max_daily: 5
+
+pipeline:
+  stages: ["research", "eda", "features", "train", "evaluate", "submit"]
+  iteration_limit: 8

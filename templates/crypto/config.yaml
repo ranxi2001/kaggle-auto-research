@@ -1,0 +1,37 @@
+competition:
+  name: ""
+  url: ""
+  type: "crypto"
+  metric: "weighted_pearson"
+  metric_direction: "maximize"
+  deadline: ""
+
+data:
+  train: "data/raw/train.parquet"
+  test: "data/raw/test.parquet"
+  sample_submission: "data/raw/sample_submission.csv"
+  target_column: "target"
+  id_column: "row_id"
+
+features:
+  version: 1
+  enabled:
+    - "lag_features"
+    - "rolling_stats"
+    - "technical_indicators"
+    - "volatility"
+
+model:
+  primary: "lightgbm"
+  cv_strategy: "time_series_split"
+  cv_folds: 5
+  seed: 42
+
+submission:
+  auto_submit: false
+  best_threshold: 0.001
+  max_daily: 5
+
+pipeline:
+  stages: ["research", "eda", "features", "train", "evaluate", "submit"]
+  iteration_limit: 15
