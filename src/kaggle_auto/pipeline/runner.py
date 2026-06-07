@@ -105,6 +105,7 @@ class PipelineRunner:
             "tabular": ["basic_stats", "interactions", "target_encoding", "null_indicator"],
             "crypto": ["lag_features", "rolling_stats", "technical_indicators", "volatility"],
             "llm": ["text_stats", "token_count"],
+            "titanic": ["titanic_custom"],
         }
         current_features = type_features.get(self.config.competition.type, ["basic_stats"])
         current_features = [f for f in current_features if f in available_features]
@@ -220,13 +221,18 @@ class PipelineRunner:
         if target_col not in raw_df.columns:
             return {"status": "skipped", "reason": f"Target '{target_col}' not found"}
 
+        # Separate target BEFORE feature building to prevent leakage
+        y = raw_df[target_col].values
+        feature_df = raw_df.drop(columns=[target_col])
+
         # Build features based on patch
         feature_names = patch.feature_names
         if feature_names is None:
             type_features = {
-                "tabular": ["basic_stats", "interactions", "target_encoding", "null_indicator"],
+                "tabular": ["basic_stats", "interactions", "null_indicator"],
                 "crypto": ["lag_features", "rolling_stats", "technical_indicators", "volatility"],
                 "llm": ["text_stats", "token_count"],
+                "titanic": ["titanic_custom"],
             }
             feature_names = type_features.get(self.config.competition.type, ["basic_stats"])
 
@@ -234,12 +240,11 @@ class PipelineRunner:
         feature_names = [f for f in feature_names if f in available]
 
         try:
-            df = build(feature_names, raw_df) if feature_names else raw_df
+            df = build(feature_names, feature_df) if feature_names else feature_df
         except Exception as e:
             return {"status": "failed", "reason": f"Feature build error: {e}"}
 
-        y = df[target_col].values
-        X = df.drop(columns=[target_col, self.config.data.id_column], errors="ignore")
+        X = df.drop(columns=[self.config.data.id_column], errors="ignore")
         X = X.select_dtypes(include=[np.number])
 
         if X.empty:

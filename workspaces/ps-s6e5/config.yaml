@@ -1,14 +1,14 @@
 competition:
   deadline: ''
-  metric: accuracy
-  metric_direction: maximize
-  name: titanic
-  type: titanic
-  url: https://www.kaggle.com/competitions/titanic
+  metric: rmse
+  metric_direction: minimize
+  name: ps-s6e5
+  type: tabular
+  url: https://www.kaggle.com/competitions/playground-series-s6e5
 data:
-  id_column: PassengerId
-  sample_submission: data/raw/gender_submission.csv
-  target_column: Survived
+  id_column: id
+  sample_submission: data/raw/sample_submission.csv
+  target_column: target
   test: data/raw/test.csv
   train: data/raw/train.csv
 model:
@@ -26,6 +26,6 @@ pipeline:
   - evaluate
   - submit
 submission:
-  auto_submit: true
+  auto_submit: false
   best_threshold: 0.01
   max_daily: 5

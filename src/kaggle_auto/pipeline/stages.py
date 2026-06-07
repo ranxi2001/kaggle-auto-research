@@ -100,6 +100,7 @@ def run_features(workspace: Path, config: WorkspaceConfig) -> dict:
         "tabular": ["basic_stats", "interactions", "target_encoding", "null_indicator"],
         "crypto": ["lag_features", "rolling_stats", "technical_indicators", "volatility"],
         "llm": ["text_stats", "token_count"],
+        "titanic": ["titanic_custom"],
     }
 
     to_build = type_features.get(config.competition.type, ["basic_stats"])
@@ -108,7 +109,13 @@ def run_features(workspace: Path, config: WorkspaceConfig) -> dict:
     if not to_build:
         return {"status": "skipped", "reason": "No applicable features found"}
 
-    result_df = build(to_build, train_df)
+    # Build features WITHOUT target to prevent leakage
+    target_col = config.data.target_column
+    build_df = train_df.drop(columns=[target_col], errors="ignore")
+    result_df = build(to_build, build_df)
+    # Re-attach target for downstream train stage
+    if target_col in train_df.columns:
+        result_df[target_col] = train_df[target_col].values
     new_cols = [c for c in result_df.columns if c not in train_df.columns]
 
     version = 1
@@ -199,12 +206,32 @@ def run_train(workspace: Path, config: WorkspaceConfig) -> dict:
         else:
             test_df = pd.read_csv(test_path)
 
-        test_X = test_df.drop(columns=[config.data.id_column], errors="ignore")
-        test_X = test_X.select_dtypes(include=[np.number])
+        # Apply same feature engineering to test data
+        from ..features import build, list_features
+        available = list_features()
+        type_features = {
+            "tabular": ["basic_stats", "interactions", "null_indicator"],
+            "crypto": ["lag_features", "rolling_stats", "technical_indicators", "volatility"],
+            "llm": ["text_stats", "token_count"],
+            "titanic": ["titanic_custom"],
+        }
+        feat_names = type_features.get(config.competition.type, ["basic_stats"])
+        feat_names = [f for f in feat_names if f in available]
+
+        test_feat_df = test_df.drop(columns=[config.data.id_column], errors="ignore")
+        if feat_names:
+            try:
+                test_feat_df = build(feat_names, test_feat_df)
+            except Exception:
+                pass
+        test_X = test_feat_df.select_dtypes(include=[np.number])
+
         # Align test columns with train columns
         missing_cols = [c for c in X.columns if c not in test_X.columns]
         for c in missing_cols:
             test_X[c] = 0
+        extra_cols = [c for c in test_X.columns if c not in X.columns]
+        test_X = test_X.drop(columns=extra_cols, errors="ignore")
         test_X = test_X[X.columns]
 
         # Average predictions from all fold models

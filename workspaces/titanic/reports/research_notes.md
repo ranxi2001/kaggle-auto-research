@@ -3,7 +3,7 @@
 ## Competition Summary
 - **Slug**: titanic
 - **URL**: https://www.kaggle.com/competitions/titanic
-- **Category**: tabular
+- **Category**: titanic
 - **Metric**: accuracy
 - **Reward**: 
 - **Deadline**: 
