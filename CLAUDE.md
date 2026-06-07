@@ -53,6 +53,7 @@ Skills in `.claude/skills/` are triggered by natural language. Each skill reads/
 | submit-monitor | "submit", "提交", "leaderboard", "排名" |
 | iteration-loop | "iterate", "improve", "下一步", "why score bad" |
 | skill-evolution | "反思", "升级技能", "evolve", "retrospective", "总结经验" |
+| notebook-workflow | "notebook", "在线跑", "push kernel", "远程训练", "GPU训练" |
 
 ### Integrated External Skills
 
