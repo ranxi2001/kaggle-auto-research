@@ -55,6 +55,13 @@ fi
 
 mkdir -p "$STAGING_DIR"
 
+# Ensure .packs/ is gitignored (avoid untracked noise blocking pack)
+if ! grep -qxF ".packs/" .gitignore 2>/dev/null; then
+    echo ".packs/" >> .gitignore
+    git add .gitignore
+    git commit -m "chore: gitignore .packs/" --no-verify -q 2>/dev/null || true
+fi
+
 REPO_NAME=$(basename "$REPO_ROOT")
 SHORT_HASH=$(git rev-parse --short HEAD)
 TS=$(date +%Y%m%d-%H%M%S)

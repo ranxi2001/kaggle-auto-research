@@ -39,3 +39,7 @@ Thumbs.db
 
 # Kaggle
 kaggle.json
+
+# Local-dev packs
+.packs/
+.pack.conf
