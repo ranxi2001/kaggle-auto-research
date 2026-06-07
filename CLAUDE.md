@@ -29,9 +29,14 @@ kar init <name> --type <type> --url <url>   # Initialize workspace
 kar research <name>                          # Run competition research
 kar eda <name>                               # Run EDA
 kar train <name>                             # Train models
-kar submit <name>                            # Submit best model
 kar pipeline <name> --full                   # Run full pipeline
-kar pipeline <name> --iterate 5             # Run 5 improvement iterations
+kar pipeline <name> --iterate 10            # Run 10 improvement iterations (NO submit)
+kar submit <name> --status                   # Check submission budget
+kar submit <name> -f submissions/xxx.csv     # Submit specific file (budget-protected)
+kar submit <name> --flush                    # Submit best from reserve queue
+kar submit <name> --history                  # View submission history
+kar analyze <name>                           # Model comparison & recommendations
+kar ensemble <name>                          # Build optimized ensemble
 ```
 
 ## Skills
@@ -47,6 +52,7 @@ Skills in `.claude/skills/` are triggered by natural language. Each skill reads/
 | model-train | "train", "训练", "tune", "ensemble", "调参" |
 | submit-monitor | "submit", "提交", "leaderboard", "排名" |
 | iteration-loop | "iterate", "improve", "下一步", "why score bad" |
+| skill-evolution | "反思", "升级技能", "evolve", "retrospective", "总结经验" |
 
 ### Integrated External Skills
 
@@ -72,6 +78,22 @@ RESEARCH → EDA → FEATURES → TRAIN → EVALUATE → SUBMIT
                                 └─── ITERATE ←───────┘
 ```
 
+## Submission Strategy (CRITICAL)
+
+**提交是稀缺资源，绝不浪费。** 核心规则：
+
+1. **迭代和提交完全分离** — iterate 阶段只做本地 CV 评估，绝不触发提交
+2. **每日预算 max_daily=2** — 比 Kaggle 实际限额更严格，留有余地
+3. **阈值检查** — 新模型必须比当前 best CV 提升 ≥ threshold 才值得提交
+4. **排队机制** — 不满足条件的自动进 reserve 队列，等条件满足再提交
+5. **多样性原则** — 每天最多 1 次"探索性"提交（不同方法论验证）
+6. **auto_submit 默认 OFF** — 只有最终生产环境且高度置信时才打开
+
+典型工作流：
+```
+Iterate 10-20 rounds → Pick top 2 candidates → Check budget → Submit 1-2
+```
+
 ## Key Design Rules
 
 1. Skills decide WHAT to do; Python library does HOW
@@ -79,3 +101,5 @@ RESEARCH → EDA → FEATURES → TRAIN → EVALUATE → SUBMIT
 3. Pipeline can resume from any checkpoint via `.state/`
 4. Configuration constrains the agent's autonomy (metric, CV, submission limits)
 5. All artifacts are versioned for rollback and comparison
+6. **NEVER auto-submit during iteration loops**
+7. **Submission budget is enforced even with force=True**

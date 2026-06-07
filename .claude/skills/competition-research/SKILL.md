@@ -3,58 +3,93 @@ name: competition-research
 description: >
   Research and analyze a Kaggle competition. Scrapes competition page, reads rules/data description,
   analyzes top solutions and discussion threads, produces a structured research report.
+  Seeds the IdeaPool with actionable improvement ideas.
   Trigger: "调研", "research competition", "analyze this kaggle", "what's the winning approach",
   "study top solutions", "竞赛分析".
 ---
 
 # Competition Research Skill
 
-自动调研 Kaggle 竞赛，生成结构化分析报告。
+自动调研 Kaggle 竞赛，生成结构化分析报告，播种 IdeaPool。
 
 ## Workflow
 
-1. **获取竞赛信息**
-   - 通过 Kaggle API 获取竞赛元数据（规则、时间线、评估指标）
-   - 解析数据描述页面，提取字段含义
+### 1. 获取竞赛信息
+- Kaggle API: 竞赛元数据（规则、时间线、评估指标、数据量）
+- 解析数据描述: 字段含义、数据类型、特殊约束
 
-2. **分析社区讨论**
-   - 抓取高赞 Discussion 帖子（Top 10）
-   - 提取关键洞察：数据泄露提示、特征工程思路、模型选择建议
+### 2. 分析社区讨论 (Top 10 Discussion)
+- 关键洞察提取：
+  - 数据泄露提示 / 已知 bug
+  - CV 策略建议（GroupKFold? TimeSeriesSplit?）
+  - 特征工程思路
+  - 模型选择建议
+  - Post-processing tricks
 
-3. **研究公开方案**
-   - 获取排名靠前的公开 Notebook 列表
-   - 分析其使用的技术栈和方法论
-   - 总结共性模式和差异化策略
+### 3. 研究公开方案 (Top Notebooks)
+- 技术栈分析: 哪些库/模型出现频率高
+- 共性模式: 什么方法是 baseline
+- 差异化策略: Top 方案做了什么不同的事
 
-4. **生成调研报告**
-   - 输出到 `workspaces/<name>/reports/research_notes.md`
-   - 包含：赛题摘要、评估指标解读、数据 schema、推荐方案
+### 4. 生成调研报告
+```
+reports/research_notes.md
+├── Competition Summary (metric, deadline, prize, n_teams)
+├── Data Schema & Key Observations
+├── Top Discussion Insights (5-10条, 按价值排序)
+├── Top Notebook Approaches (3-5个, 带代码片段)
+├── Recommended Strategy (baseline → advanced roadmap)
+└── IdeaPool Seeds (actionable improvement ideas)
+```
+
+### 5. 播种 IdeaPool
+```python
+from kaggle_auto.pipeline import IdeaPool
+pool = IdeaPool(workspace)
+pool.seed_from_research(workspace / "reports/research_notes.md")
+# Extracts: feature ideas, model ideas, preprocessing ideas
+```
+
+## Research Output → Downstream Impact
+
+| Research Finding | Feeds Into | Example |
+|-----------------|------------|---------|
+| "Top solutions use family survival rate" | EDA-Features skill | Generate LOO feature |
+| "GroupKFold required for this metric" | Model-Train skill | Switch CV strategy |
+| "Ensemble of LGB+XGB+CatBoost wins" | Iteration skill | Plan model diversity |
+| "Post-processing: clip predictions to [0.05, 0.95]" | Submit skill | Apply before submission |
+
+## Hard Rules
+
+### 1. Research 不修改代码
+只产出报告和 idea seeds。不自动改 config、不生成特征代码、不训练模型。
+
+### 2. 报告必须 Actionable
+每个 insight 必须附带 "so what" — 具体建议下一步该做什么。
+Bad: "Top solutions use neural networks"
+Good: "Top solutions use TabNet (n_steps=5, n_a=32) as diversity model in ensemble with LGB"
+
+### 3. 识别竞赛 "地雷"
+- 数据泄露警告
+- 已知的 test set 特殊性
+- Evaluation metric 的陷阱 (e.g., micro vs macro F1)
+- 提交格式的常见错误
 
 ## Usage
 
 ```bash
-kar research <competition-name>
+kar research <name>
 ```
 
-或在 Claude Code 中：
+或 Claude Code 中：
 ```
-> 帮我调研一下 DRW Crypto Market Prediction 这个比赛
-> 分析一下这个比赛的 top solution 都用了什么方法
-```
-
-## Output
-
-```
-reports/research_notes.md
-├── Competition Summary
-├── Evaluation Metric
-├── Data Schema & Key Observations
-├── Top Discussion Insights (5-10条)
-├── Top Notebook Approaches (3-5个)
-└── Recommended Strategy
+> 调研一下这个比赛的 top solution
+> 分析竞赛讨论区有什么有用信息
 ```
 
-## Dependencies
+## Lesson Log
 
-- `kaggle` CLI configured (`~/.kaggle/kaggle.json`)
-- `src/kaggle_auto/research/` module
+| Date | Lesson | Impact |
+|------|--------|--------|
+| 2026-06-06 | Research 要输出到 IdeaPool 才有后续价值 | Added seed_from_research() |
+| 2026-06-07 | 识别 GroupKFold necessity 应在 research 阶段 | 避免后期发现 CV 不可信 |

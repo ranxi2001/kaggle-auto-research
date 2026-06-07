@@ -26,6 +26,6 @@ pipeline:
   - evaluate
   - submit
 submission:
-  auto_submit: true
-  best_threshold: 0.01
-  max_daily: 5
+  auto_submit: false
+  best_threshold: 0.005
+  max_daily: 2

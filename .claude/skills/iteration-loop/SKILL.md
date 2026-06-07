@@ -3,13 +3,35 @@ name: iteration-loop
 description: >
   Analyze current performance and drive iterative improvement using tree-search.
   Uses IdeaPool, ErrorAnalysis, and CodeGen to systematically explore the solution space.
+  NEVER submits during iteration — only generates candidates for review.
   Trigger: "iterate", "improve", "下一步", "next step", "why score bad",
   "分数为什么低", "怎么提升", "error analysis", "误差分析".
 ---
 
 # Iteration Loop Skill
 
-分析当前状态，驱动 AIDE 风格的迭代优化闭环。
+分析当前状态，驱动 AIDE 风格的迭代优化闭环。**迭代阶段绝不提交** — 只生成候选方案。
+
+## Critical Rule: Iteration vs Submission are SEPARATE
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  ITERATION PHASE (unlimited, free, no cost)              │
+│                                                          │
+│  Train → Evaluate CV → Compare → Pick winners            │
+│  Repeat 5-20 rounds until convergence                    │
+│                                                          │
+│  Output: ranked list of candidates + submission files    │
+└──────────────────────────────────────────────────────────┘
+                         │
+                         ▼ (human decision point)
+┌──────────────────────────────────────────────────────────┐
+│  SUBMISSION PHASE (limited, expensive, max 2/day)        │
+│                                                          │
+│  Review candidates → Pick best 1-2 → Submit             │
+│  Budget-protected, threshold-checked                     │
+└──────────────────────────────────────────────────────────┘
+```
 
 ## Architecture
 
@@ -21,6 +43,9 @@ description: >
 │       ↑                                       │     │
 │       └───────────── Feedback ←───────────────┘     │
 └─────────────────────────────────────────────────────┘
+         │ Convergence reached
+         ▼
+   Generate final submission candidates (DO NOT submit)
 ```
 
 ## Workflow
@@ -34,126 +59,135 @@ workspace = Path("workspaces/<name>")
 analyzer = IterationAnalyzer(workspace)
 pool = IdeaPool(workspace)
 
-# Get current state
 analysis = analyzer.analyze_latest()
 comparisons = analyzer.compare_models()
 recommendations = analyzer.get_recommendations()
 ```
 
-Key outputs:
-- `analysis["cv_mean"]` — current best CV score
-- `analysis["top_features"]` — what's driving predictions
-- `analysis["zero_importance_features"]` — dead weight features
-- `analysis["cv_stability"]` — CV variance (overfitting signal)
-
 ### 2. Idea Pool Management
 
 ```python
-# Seed ideas from research report
 pool.seed_from_research(workspace / "reports" / "research_notes.md")
-
-# Seed ideas from analysis
 pool.seed_from_analysis(analysis)
-
-# Get top untried ideas
 next_ideas = pool.get_next(n=3)
-
-# After execution, mark result
-pool.mark_tried(idea.id, result="improved", metric_delta=-0.003)
+pool.mark_tried(idea.id, result="improved", metric_delta=+0.003)
 ```
 
-Categories: `feature`, `model`, `preprocessing`, `ensemble`, `postprocess`
-
 ### 3. Code Generation (AIDE-style)
-
-For custom experiments that can't be expressed as simple patches:
 
 ```python
 from kaggle_auto.pipeline import CodeGenerator
 
 codegen = CodeGenerator(workspace)
-
-# Generate a feature experiment script
 script = codegen.generate_feature_script(
-    feature_code='''
-# Custom feature: passenger title extraction
-df["Title"] = df["Name"].str.extract(r" ([A-Za-z]+)\.", expand=False)
-df["Title"] = df["Title"].map({"Mr": 0, "Miss": 1, "Mrs": 2, "Master": 3}).fillna(4)
-df = df.drop(columns=["Name", "Ticket", "Cabin"], errors="ignore")
-''',
-    feature_name="title_extraction",
+    feature_code='...',
+    feature_name="ticket_survival",
     train_path=str(workspace / "data/raw/train.csv"),
     target_col="Survived",
     id_col="PassengerId",
 )
-
-# Execute and get metric
 result = codegen.execute(script)
-# result = {"status": "completed", "cv_mean": 0.412, "cv_std": 0.02, ...}
 ```
 
 ### 4. Tree-Search Iteration (CLI)
 
 ```bash
-# Run N iterations with automatic strategy selection
-kar pipeline <name> --iterate 10
-
-# View experiment tree
-kar status <name>
-
-# Get detailed analysis and recommendations
-kar analyze <name>
+kar pipeline <name> --iterate 10    # Run 10 iterations (NO submission)
+kar analyze <name>                  # View results & recommendations
+kar submit <name> --status          # Check budget before submitting
+kar submit <name>                   # Submit best candidate (manual trigger)
 ```
 
-### 5. 策略推荐（按预期收益排序）
-
-Based on analysis, recommend in this priority order:
+### 5. 策略推荐
 
 | Priority | Condition | Action |
 |----------|-----------|--------|
-| 1 | `cv_stability > 0.1` | Reduce complexity (fewer leaves, more regularization) |
-| 2 | `zero_features > 5` | Feature selection (drop dead features) |
-| 3 | `feature_concentration > 0.8` | Diversify (new feature types) |
+| 1 | `cv_stability > 0.1` | Reduce complexity |
+| 2 | `zero_features > 5` | Feature selection |
+| 3 | `feature_concentration > 0.8` | Diversify features |
 | 4 | `stale_rounds >= 3` | Model switch or ensemble |
-| 5 | All stable | Try postprocessing or submit |
+| 5 | All stable | **Generate submission candidate** (not submit!) |
 
-### 6. 收敛判断
+### 6. 收敛判断 & 候选输出
 
-- **Early Stop**: 3 consecutive rounds without improvement → change strategy
-- **Plateau**: score variance < 1e-6 over 5 rounds → try radical change (ensemble, model switch)
-- **Deadline Near**: switch to ensemble and threshold optimization
-- **Target Reached**: lock and submit
+When iteration converges:
+1. Generate submission files for top 2-3 diverse approaches
+2. Log their CV scores and method descriptions
+3. **Report to user**: "Here are the candidates — which to submit?"
+4. WAIT for explicit submit command
 
 ## Decision Framework for Agent
 
 When the user asks "下一步" or "improve":
 
-1. **Run `kar analyze <name>`** to understand current state
-2. **Check idea pool** for untried high-priority ideas
-3. **Choose strategy**:
-   - If `recommendations` suggest feature work → generate feature code
-   - If `recommendations` suggest model changes → use pipeline `--iterate`
-   - If `recommendations` suggest ensemble → build ensemble from top models
-4. **Execute** the chosen strategy
-5. **Report** the result with metric delta
+1. **Check submission budget** — report remaining submissions
+2. **Run analysis** to understand current state
+3. **Iterate locally** (5-20 rounds, no submission)
+4. **Present candidates** with CV scores ranked
+5. **Wait for user** to choose which to submit
+
+**NEVER do this:**
+- Call `submitter.submit()` inside an iteration loop
+- Set `auto_submit: true` during experimentation
+- Submit more than the budget allows
+
+## Pipeline Integration
+
+The pipeline `submit` stage should be OFF during development:
+
+```yaml
+# config.yaml during iteration
+submission:
+  auto_submit: false    # Always false during iteration!
+  max_daily: 2
+  best_threshold: 0.005
+```
+
+Only enable auto_submit for final production runs with strong confidence.
 
 ## State Files
 
 ```
 .state/
-├── pipeline_state.json     # Stage completion tracking
-├── iteration_history.json  # Iteration log
-├── journal.json           # Experiment tree
-├── idea_pool.json         # Persistent idea store
-└── scripts/               # Generated experiment scripts
-    ├── title_extraction.py
-    ├── freq_encoding.py
-    └── ...
+├── pipeline_state.json
+├── iteration_history.json
+├── journal.json
+├── idea_pool.json
+├── submission_budget.json
+└── scripts/
 ```
 
-## Integration with Other Skills
+## Auto-Evolution Hook
 
-- **competition-research** seeds the idea pool with patterns from top solutions
-- **eda-features** provides feature importance analysis input
-- **model-train** executes training variants
-- **submit-monitor** provides LB feedback to update idea priorities
+迭代结束后自动触发 skill-evolution：
+
+```
+After each iteration batch completes:
+1. If new best found → record what worked to model-train Lesson Log
+2. If stale x3 → record that strategy is exhausted to iteration-loop Lesson Log
+3. If CV-LB gap data available → update calibration in submit-monitor
+4. If bug found → add to NEVER Do in relevant skill
+```
+
+## Hard Rules
+
+### 1. 永远不在迭代中提交
+即使结果非常好。生成 submission file 可以，但 API call 绝不触发。
+
+### 2. 连续无提升时切换策略
+不要在同一方向死磕。Feature → Hyperparam → Model switch → Ensemble，螺旋前进。
+
+### 3. 记录每次实验的完整上下文
+不只记分数，还要记：用了什么特征集、什么模型、什么超参。方便回溯最佳组合。
+
+### 4. 候选输出必须有多样性
+Top 3 candidates 之间的 OOF correlation < 0.95。否则只保留最好的那个。
+
+## Lesson Log
+
+| Date | Lesson | Impact |
+|------|--------|--------|
+| 2026-06-06 | Auto-submit in pipeline burned 10 submissions in minutes | Added strict budget |
+| 2026-06-06 | Threshold optimization on OOF doesn't transfer to LB | Don't optimize threshold |
+| 2026-06-07 | 5-model stacking not better than 2-model blend on small data | Keep it simple |
+| 2026-06-07 | Multi-seed averaging: no LB gain for Titanic | Skip for n<5000 |

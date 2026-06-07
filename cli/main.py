@@ -209,18 +209,47 @@ def _run_tuning(workspace: Path, config, trials: int):
 @app.command()
 def submit(
     name: str = typer.Argument(..., help="Competition workspace name"),
-    force: bool = typer.Option(False, "--force", help="Skip threshold check"),
+    force: bool = typer.Option(False, "--force", help="Skip threshold check (still respects budget)"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Validate only, don't submit"),
     history: bool = typer.Option(False, "--history", help="Show submission history"),
+    status: bool = typer.Option(False, "--status", help="Show budget and queue status"),
+    flush: bool = typer.Option(False, "--flush", help="Submit best from reserve queue"),
+    file: str = typer.Option("", "--file", "-f", help="Submit a specific file"),
 ):
-    """Submit predictions or view history."""
+    """Submit predictions with budget protection."""
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
-    from kaggle_auto.submission import ScoreTracker
+    from kaggle_auto.submission import Submitter, ScoreTracker
 
     workspace = get_workspace(name)
     config = load_config(workspace)
+    submitter = Submitter(workspace, config)
 
+    # Status view
+    if status:
+        budget = submitter.status()
+        console.print(f"[cyan]Submission Budget:[/cyan] {name}")
+        console.print(f"  Today: {budget['submitted_today']}/{budget['max_daily']} used")
+        console.print(f"  Remaining: [{'green' if budget['remaining_today'] > 0 else 'red'}]{budget['remaining_today']}[/]")
+        if budget["reserved_queue"] > 0:
+            console.print(f"\n  [yellow]Reserve queue ({budget['reserved_queue']}):[/yellow]")
+            for r in budget["reserved"]:
+                console.print(f"    CV={r.get('cv_score', '?'):.4f} | {r['reason'][:60]}")
+        return
+
+    # Flush reserved
+    if flush:
+        results = submitter.submit_reserved(n=1)
+        if not results:
+            console.print("[dim]No reserved submissions to flush.[/dim]")
+        for r in results:
+            if r.get("success"):
+                console.print(f"[green]Submitted![/green] Remaining: {r.get('remaining_today', '?')}")
+            else:
+                console.print(f"[red]Failed:[/red] {r.get('errors', ['unknown'])}")
+        return
+
+    # History view
     if history:
         tracker = ScoreTracker(workspace)
         entries = tracker.get_history()
@@ -239,16 +268,52 @@ def submit(
             table.add_row(
                 e["id"],
                 e["timestamp"][:16],
-                f"{e['cv_score']:.6f}" if e.get("cv_score") else "—",
-                f"{e['lb_score']:.6f}" if e.get("lb_score") else "—",
-                e.get("model_version", "—"),
+                f"{e['cv_score']:.6f}" if e.get("cv_score") else "-",
+                f"{e['lb_score']:.6f}" if e.get("lb_score") else "-",
+                e.get("model_version", "-"),
             )
         console.print(table)
         return
 
-    console.print(f"[yellow]Preparing submission for:[/yellow] {name}")
-    if dry_run:
-        console.print("[dim]Dry run — validating only[/dim]")
+    # Submit specific file
+    if file:
+        file_path = Path(file)
+        if not file_path.is_absolute():
+            file_path = workspace / file_path
+        if not file_path.exists():
+            console.print(f"[red]File not found:[/red] {file_path}")
+            raise typer.Exit(1)
+
+        # Show budget before submitting
+        budget = submitter.status()
+        console.print(f"  Budget: {budget['remaining_today']}/{budget['max_daily']} remaining")
+
+        if dry_run:
+            validation = submitter.validate(file_path)
+            console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+            if not validation.is_valid:
+                for e in validation.errors:
+                    console.print(f"    [red]{e}[/red]")
+            return
+
+        result = submitter.submit(file_path, message="Manual submit", force=force)
+        if result.get("success"):
+            console.print(f"[green]Submitted![/green] Remaining: {result.get('remaining_today', '?')}")
+        elif result.get("queued"):
+            console.print(f"[yellow]Queued:[/yellow] {result['errors'][0]}")
+        else:
+            console.print(f"[red]Failed:[/red] {result.get('errors', ['unknown'])}")
+        return
+
+    # Default: show status and instructions
+    budget = submitter.status()
+    console.print(f"[cyan]Submission Status:[/cyan] {name}")
+    console.print(f"  Budget: {budget['remaining_today']}/{budget['max_daily']} remaining today")
+    if budget["reserved_queue"] > 0:
+        console.print(f"  Reserve queue: {budget['reserved_queue']} candidates waiting")
+    console.print(f"\n  Submit a file:  kar submit {name} -f submissions/sub_007.csv")
+    console.print(f"  From queue:     kar submit {name} --flush")
+    console.print(f"  Check status:   kar submit {name} --status")
 
 
 @app.command()

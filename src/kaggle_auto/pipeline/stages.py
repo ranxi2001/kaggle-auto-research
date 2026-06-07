@@ -283,7 +283,7 @@ def run_evaluate(workspace: Path, config: WorkspaceConfig) -> dict:
 
 @stage("submit")
 def run_submit(workspace: Path, config: WorkspaceConfig) -> dict:
-    """Generate and submit predictions."""
+    """Generate submission file and optionally submit (budget-protected)."""
     from ..submission import Submitter
 
     models_dir = workspace / "models"
@@ -303,7 +303,7 @@ def run_submit(workspace: Path, config: WorkspaceConfig) -> dict:
     # For classification tasks, convert probabilities to class labels
     import json
     cv_file = latest / "cv_scores.json"
-    task = "regression"
+    scores = {}
     if cv_file.exists():
         with open(cv_file) as f:
             scores = json.load(f)
@@ -316,7 +316,6 @@ def run_submit(workspace: Path, config: WorkspaceConfig) -> dict:
         else:
             train_df = pd.read_csv(train_path, usecols=[config.data.target_column])
         if train_df[config.data.target_column].nunique() <= 20:
-            task = "classification"
             preds = (preds >= 0.5).astype(int)
 
     submitter = Submitter(workspace, config)
@@ -331,27 +330,37 @@ def run_submit(workspace: Path, config: WorkspaceConfig) -> dict:
             "submission_path": str(sub_path),
         }
 
+    # Report budget status
+    budget_status = submitter.status()
+    cv_score = scores.get("mean_score")
+
     if not config.submission.auto_submit:
         return {
             "status": "completed",
-            "action": "generated",
+            "action": "generated_only",
             "submission_path": str(sub_path),
-            "message": "Submission file generated. Set auto_submit: true to submit automatically.",
+            "cv_score": cv_score,
+            "budget": budget_status,
+            "message": (
+                f"Submission file generated (CV={cv_score:.4f}). "
+                f"Budget: {budget_status['remaining_today']}/{budget_status['max_daily']} remaining today. "
+                f"Use `kar submit <name>` to submit manually."
+            ),
         }
 
-    # Actually submit to Kaggle
-    cv_score = scores.get("mean_score") if cv_file.exists() else None
+    # Auto-submit (budget-protected — will queue if exhausted)
     result = submitter.submit(
         sub_path,
-        message=f"Pipeline auto-submit {model_version}",
+        message=f"Pipeline auto-submit {model_version} CV={cv_score:.4f}" if cv_score else f"Pipeline auto-submit {model_version}",
         model_version=model_version,
         cv_score=cv_score,
     )
 
     return {
-        "status": "completed" if result["success"] else "failed",
+        "status": "completed" if result.get("success") else ("queued" if result.get("queued") else "failed"),
         "submission_path": str(sub_path),
         "submit_result": result,
+        "budget": budget_status,
     }
 
 
