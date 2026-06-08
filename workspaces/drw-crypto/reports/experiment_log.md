@@ -336,3 +336,13 @@
   - public LB: `0.08199`
   - private score shown by Kaggle: `0.08268`
   - status: `SubmissionStatus.COMPLETE`
+
+## Second Submission Result - tail_cli_full - 2026-06-09
+
+- Submitted `sub_calibrated_tail_cli_full.csv` with `--force` because the normal CV threshold guard correctly blocked it against the higher full OOF first submission.
+- Kaggle ref: `53487669`
+- Public LB: `0.07184`
+- Private score shown by Kaggle: `0.08128`
+- Budget after submission: `2/2` used, `0` remaining.
+- Synced with `kar sync-lb drw-crypto`; `reports/lb_sync.csv` and local submission history now contain both Kaggle refs.
+- Interpretation: the recency-weighted composite (`0.123363`) did not improve public LB versus the first submission (`0.08199`). Keep the first submission as current Kaggle best and avoid re-submitting lower-confidence variants of this tail CLI candidate.

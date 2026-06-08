@@ -1,33 +1,34 @@
-# DRW Submit Decision - 2026-06-09
+# DRW Submit Review - 2026-06-09
 
 ## Current Kaggle State
 
 - Competition: `drw-crypto-market-prediction`
-- Submitted today: `1/2`
-- Remaining local budget: `1`
+- Submitted today: `2/2`
+- Remaining local budget: `0`
 - Kaggle submissions:
+  - `53487669`
+  - file: `sub_calibrated_tail_cli_full.csv`
+  - public LB: `0.07184`
+  - private score shown by Kaggle: `0.08128`
   - `53486449`
   - file: `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`
   - public LB: `0.08199`
   - private score shown by Kaggle: `0.08268`
 
-## Current Recommendation
+## Outcome
 
-Submit:
+The second submission underperformed the first public LB result.
 
-```powershell
-.\kar.cmd submit drw-crypto --file submissions\sub_calibrated_tail_cli_full.csv
-```
+| File | Local score | Public LB | Private shown |
+| --- | ---: | ---: | ---: |
+| `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv` | `0.149746` | `0.08199` | `0.08268` |
+| `sub_calibrated_tail_cli_full.csv` | `0.123363` | `0.07184` | `0.08128` |
 
-Dry-run status: valid.
-
-Submit metadata: `kar submit` reads `scores.composite` from the adjacent JSON and will record `CV=0.123363` with model versions `v032,v028,v010,v017,v029,v023`.
-
-Do not submit older candidates unless deliberately running an ablation.
+Interpretation: the recency-weighted proxy reduced local overfit signals, but did not translate to public LB improvement. Keep the first submission as the current Kaggle best. Do not re-submit the tail CLI candidate.
 
 ## Candidate Summary
 
-Recommended file:
+Submitted file:
 
 ```text
 sub_calibrated_tail_cli_full.csv
@@ -79,19 +80,14 @@ The first submission had strong local full OOF (`0.149746`) but only reached pub
 
 This candidate is the strongest completed run under that proxy and has more prediction diversity from the first submission than the earlier conservative ensembles.
 
-## After Submission
+The experiment shows this proxy is not sufficient as a submission selector on its own.
 
-Run:
+## Next Iteration Direction
 
-```powershell
-.\kar.cmd leaderboard drw-crypto
-```
-
-Then update:
-
-- `reports/experiment_log.md`
-- local submission history if `kar sync-lb` exists later
-- README progress if the result materially changes the project status
+- Treat `0.08199` public LB as the current external anchor.
+- Use `kar sync-lb drw-crypto` after future submissions to keep `reports/lb_sync.csv` and `submissions/history.json` current.
+- Build the next candidate around direct LB calibration, not only tail OOF proxies.
+- Avoid submitting candidates that are mostly lower-confidence variants of `sub_calibrated_tail_cli_full.csv`.
 
 ## Reproduce The Candidate Search
 
