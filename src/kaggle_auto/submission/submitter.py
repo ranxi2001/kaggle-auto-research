@@ -2,7 +2,7 @@
 
 import json
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -244,7 +244,10 @@ class Submitter:
 
     def status(self) -> dict:
         """Get submission budget status."""
+        today = date.today()
         return {
+            "today": str(today),
+            "next_reset_date": str(today + timedelta(days=1)),
             "submitted_today": self.budget.today_count(),
             "remaining_today": self.budget.remaining_today(),
             "max_daily": self.budget.max_daily,

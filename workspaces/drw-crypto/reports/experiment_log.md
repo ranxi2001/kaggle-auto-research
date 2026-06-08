@@ -655,3 +655,17 @@
   - CV/utility: `0.128042`
   - reserve queue length: `1`
 - Next real-submit command after budget reset: `kar submit drw-crypto --flush`.
+
+## Submit Status UX - 2026-06-10
+
+- Improved `kar submit <workspace> --status` so it prints:
+  - local budget date
+  - next local reset date
+  - full reserve-queue filename
+  - exact queued CV score
+  - reserve reason and date
+- Verified current status:
+  - local date: `2026-06-09`
+  - next local reset date: `2026-06-10`
+  - queued file: `sub_anchor_blend_micro_scan.csv`
+  - queued CV/utility: `0.128042`

@@ -2171,12 +2171,21 @@ def submit(
     if status:
         budget = submitter.status()
         console.print(f"[cyan]Submission Budget:[/cyan] {name}")
+        console.print(f"  Local date: {budget['today']}")
         console.print(f"  Today: {budget['submitted_today']}/{budget['max_daily']} used")
         console.print(f"  Remaining: [{'green' if budget['remaining_today'] > 0 else 'red'}]{budget['remaining_today']}[/]")
+        if budget["remaining_today"] <= 0:
+            console.print(f"  Next local reset date: {budget['next_reset_date']}")
         if budget["reserved_queue"] > 0:
             console.print(f"\n  [yellow]Reserve queue ({budget['reserved_queue']}):[/yellow]")
             for r in budget["reserved"]:
-                console.print(f"    CV={r.get('cv_score', '?'):.4f} | {r['reason'][:60]}")
+                path = Path(r.get("path", ""))
+                cv_score = r.get("cv_score")
+                cv_text = "?" if cv_score is None else f"{float(cv_score):.6f}"
+                console.print(f"    File: {path.name}")
+                console.print(f"      CV: {cv_text}")
+                console.print(f"      Reserved: {r.get('date_reserved', '-')}")
+                console.print(f"      Reason: {r.get('reason', '-')}")
         return
 
     # Flush reserved
