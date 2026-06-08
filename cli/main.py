@@ -1393,6 +1393,138 @@ def drw_compare_submissions(
     console.print(f"  Pairs: {pair_path}")
 
 
+@app.command("drw-anti-failed")
+def drw_anti_failed(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    anchor_file: str = typer.Option(
+        "sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv",
+        "--anchor-file",
+        help="Public-best submission used as the anchor",
+    ),
+    failed_file: str = typer.Option(
+        "sub_calibrated_tail_cli_full.csv",
+        "--failed-file",
+        help="Known underperforming submission used as the negative direction",
+    ),
+    utility_file: str = typer.Option(
+        "sub_anchor_blend_utility_scan.csv",
+        "--utility-file",
+        help="Optional model-based candidate used as an additional reference",
+    ),
+    beta_grid: str = typer.Option(
+        "0.04,0.06,0.08,0.10,0.12,0.15",
+        "--beta-grid",
+        help="Comma-separated beta values for rank(anchor + beta * (anchor - failed))",
+    ),
+    output_tag: str = typer.Option("anti_failed_rank_family", "--output-tag", help="Report filename tag"),
+):
+    """Generate DRW public-feedback anti-failed rank extrapolation candidates."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import rankdata
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    submissions_dir = workspace / "submissions"
+    anchor_path = submissions_dir / anchor_file
+    failed_path = submissions_dir / failed_file
+    utility_path = submissions_dir / utility_file
+    if not anchor_path.exists():
+        console.print(f"[red]Missing anchor submission:[/red] {anchor_path}")
+        raise typer.Exit(1)
+    if not failed_path.exists():
+        console.print(f"[red]Missing failed submission:[/red] {failed_path}")
+        raise typer.Exit(1)
+
+    def rank_normalize(values: np.ndarray) -> np.ndarray:
+        ranks = rankdata(values, method="average").astype("float64")
+        return (ranks - 0.5) / len(ranks) * 2 - 1
+
+    def read_submission(path: Path) -> tuple[pd.Series, np.ndarray]:
+        df = pd.read_csv(path)
+        return df.iloc[:, 0], df.iloc[:, 1].to_numpy(dtype="float64")
+
+    ids, anchor_pred = read_submission(anchor_path)
+    failed_ids, failed_pred = read_submission(failed_path)
+    if not np.array_equal(ids.to_numpy(), failed_ids.to_numpy()):
+        console.print("[red]Anchor and failed submissions have different ID order.[/red]")
+        raise typer.Exit(1)
+
+    utility_rank = None
+    if utility_path.exists():
+        utility_ids, utility_pred = read_submission(utility_path)
+        if np.array_equal(ids.to_numpy(), utility_ids.to_numpy()):
+            utility_rank = rank_normalize(utility_pred)
+        else:
+            console.print("[yellow]Utility reference skipped because ID order differs.[/yellow]")
+
+    anchor_rank = rank_normalize(anchor_pred)
+    failed_rank = rank_normalize(failed_pred)
+    betas = [float(item.strip()) for item in beta_grid.split(",") if item.strip()]
+    if not betas:
+        console.print("[red]Need at least one beta in --beta-grid.[/red]")
+        raise typer.Exit(1)
+
+    rows = []
+    for beta in betas:
+        extrapolated = anchor_rank + beta * (anchor_rank - failed_rank)
+        pred = rank_normalize(extrapolated)
+        suffix = f"beta{int(round(beta * 1000)):03d}"
+        sub_path = submissions_dir / f"sub_anti_failed_rank_{suffix}.csv"
+        pd.DataFrame({"ID": ids, "prediction": pred}).to_csv(sub_path, index=False)
+
+        meta = {
+            "method": "anti_failed_extrapolation",
+            "mode": "rank",
+            "beta": float(beta),
+            "anchor_submission": anchor_path.name,
+            "failed_submission": failed_path.name,
+            "scores": {},
+            "spearman_to_anchor": float(np.corrcoef(anchor_rank, pred)[0, 1]),
+            "spearman_to_failed": float(np.corrcoef(failed_rank, pred)[0, 1]),
+            "spearman_to_utility": None
+            if utility_rank is None
+            else float(np.corrcoef(utility_rank, pred)[0, 1]),
+            "mean_rank_delta_to_anchor": float(np.mean(np.abs(anchor_rank - pred)) / 2),
+            "warning": (
+                "No OOF score; uses only public-LB feedback geometry. "
+                "Diagnostic fallback, not first-choice submit."
+            ),
+        }
+        sub_path.with_suffix(".json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        validation = Submitter(workspace, config).validate(sub_path)
+        rows.append({
+            "file": sub_path.name,
+            **meta,
+            "valid": validation.is_valid,
+            "errors": "; ".join(validation.errors),
+        })
+
+    report_path = workspace / "reports" / f"{output_tag}.csv"
+    pd.DataFrame(rows).to_csv(report_path, index=False)
+
+    table = Table(title=f"Anti-Failed Candidates: {name}")
+    for column in ["file", "beta", "valid", "spear_anchor", "spear_failed", "rank_delta"]:
+        table.add_column(column)
+    for row in rows:
+        table.add_row(
+            row["file"],
+            f"{float(row['beta']):.3f}",
+            "Y" if row["valid"] else "N",
+            f"{float(row['spearman_to_anchor']):.6f}",
+            f"{float(row['spearman_to_failed']):.6f}",
+            f"{float(row['mean_rank_delta_to_anchor']):.6f}",
+        )
+    console.print(table)
+    console.print(f"  Report: {report_path}")
+
+
 @app.command("drw-public")
 def drw_public(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),

@@ -120,6 +120,7 @@ The recent DRW Crypto work showed that model code was not the main bottleneck. T
 | submission metadata | Manual file submissions still need CV, model versions, and ensemble weights. | normalized submission `.json` files |
 | LB sync | Kaggle scores should be written back into local history after submission. | `kar sync-lb <workspace>` |
 | LB-anchor calibration | Once real LB feedback exists, next candidates should stay close to the best submitted anchor and avoid known failed directions. | `kar drw-anchor-blend <workspace>` |
+| anti-failed feedback probes | Failed submissions should become explicit negative directions, with candidate families that preserve anchor similarity while moving away from known bad geometry. | `kar drw-anti-failed <workspace>` |
 | notebook miner | Public feature lists, CV schemes, and ensembles should become structured ideas. | `kar notebooks mine` |
 | recipe system | Commands like `drw-ridge` should graduate from hardcoded scripts into templates. | `kar run --template crypto/low_signal_feature_select` |
 | agent-friendly output | Long tables and styled output are not stable machine interfaces. | global `--json` + stable exit codes |
@@ -232,6 +233,7 @@ kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
 kar drw-anchor-blend drw-crypto --output-tag anchor_blend_safe
 kar drw-anchor-blend drw-crypto --groups safe:v016+v017+v031+v032 --alpha-grid 0.15,0.18,0.19,0.20,0.21 --min-spearman 0.994 --max-rank-delta 0.025 --output-tag anchor_blend_conservative
 kar drw-anchor-blend drw-crypto --selection-metric utility --failed-threshold 0.935 --risk-penalty 0.60 --output-tag anchor_blend_utility_scan
+kar drw-anti-failed drw-crypto --beta-grid 0.04,0.06,0.08,0.10,0.12,0.15
 kar drw-compare-submissions drw-crypto --files sub_anchor_blend_utility_scan.csv,sub_anchor_blend_conservative.csv,sub_anti_failed_rank_beta020.csv
 ```
 

@@ -26,6 +26,17 @@ It improved over the second tail-calibrated submission (`0.07184` -> `0.07695`) 
 
 Do not keep pushing local-composite anchor blends unless they preserve more of the first submission. The next useful branch is either an even smaller anchor move or a diagnostic anti-failed extrapolation.
 
+After the third submission result, the next offline candidates are:
+
+| Candidate | Type | Local score | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor | Use |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| `sub_anchor_blend_micro_scan.csv` | model-based micro anchor blend | `0.128042` | `0.998170` | `0.926368` | `0.013142` | safest model-based next candidate |
+| `sub_anchor_blend_low_failed_scan.csv` | model-based lower-failed blend | `0.127900` | `0.997267` | `0.923697` | `0.015701` | backup if accepting more local-score loss |
+| `sub_anti_failed_rank_beta100.csv` | public-feedback anti-failed probe |  | `0.999154` | `0.890386` | `0.008920` | diagnostic candidate if testing failed-direction harm |
+| `sub_anti_failed_rank_beta120.csv` | public-feedback anti-failed probe |  | `0.998787` | `0.886679` | `0.010695` | more aggressive diagnostic variant |
+
+Recommendation for the next real submission is `sub_anchor_blend_micro_scan.csv` if staying within model-backed candidates. If deliberately using public LB feedback as the main signal, prefer `sub_anti_failed_rank_beta100.csv` over the earlier beta `0.20` because it is much closer to the first submission while still moving clearly away from the failed second submission.
+
 ## Candidate
 
 File:

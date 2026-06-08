@@ -561,3 +561,44 @@
   - Worse than the first public-best ensemble (`0.08199` public).
 - Interpretation: the risk-aware anchor blend corrected part of the failed second submission's drift, but still gave up too much of the first submission's public-LB geometry. Local composite and utility remain only weakly aligned with the public leaderboard for this competition.
 - Next direction: prioritize candidates with even higher Spearman similarity to the first submission, or test the already-generated anti-failed diagnostic fallback only as an explicit public-feedback probe.
+
+## Post-Third Conservative Candidate Scan - 2026-06-10
+
+- Generated smaller anchor moves after the third submission failed to beat the first public LB.
+- Commands:
+  - `kar drw-anchor-blend drw-crypto --groups conservative:v016+v017+v031+v032,balanced_no_v032:v016+v017+v021+v023,low_failed:v021+v023+v017,v017:v017,v021:v021,v023:v023 --alpha-grid 0.02,0.03,0.04,0.05,0.06,0.08,0.10,0.12 --min-spearman 0.997 --max-rank-delta 0.015 --selection-metric utility --failed-threshold 0.930 --risk-penalty 0.80 --output-tag anchor_blend_micro_scan`
+  - `kar drw-anchor-blend drw-crypto --groups conservative:v016+v017+v031+v032,balanced_no_v032:v016+v017+v021+v023,low_failed:v021+v023+v017,v017:v017,v021:v021,v023:v023 --alpha-grid 0.04,0.05,0.06,0.08,0.10,0.12,0.14,0.16 --min-spearman 0.996 --max-rank-delta 0.020 --selection-metric utility --failed-threshold 0.925 --risk-penalty 1.20 --output-tag anchor_blend_low_failed_scan`
+- Reports:
+  - `reports/anchor_blend_micro_scan_anchor_blend_scan.csv`
+  - `reports/anchor_blend_low_failed_scan_anchor_blend_scan.csv`
+- Selected model-backed next candidate: `sub_anchor_blend_micro_scan.csv`
+  - local utility/composite: `0.128042`
+  - Spearman to first anchor: `0.998170`
+  - Spearman to failed tail: `0.926368`
+  - mean rank delta to anchor: `0.013142`
+- Backup: `sub_anchor_blend_low_failed_scan.csv`
+  - local utility/composite: `0.127900`
+  - Spearman to first anchor: `0.997267`
+  - Spearman to failed tail: `0.923697`
+  - mean rank delta to anchor: `0.015701`
+- Decision: if the next submission must remain model-backed, use `sub_anchor_blend_micro_scan.csv`. It is closer to the first public-best submission than the failed third submission while still reducing failed-tail similarity.
+
+## Anti-Failed CLI And Candidate Family - 2026-06-10
+
+- Added `kar drw-anti-failed` to turn a known failed submission into an explicit negative rank direction.
+- Command:
+  `kar drw-anti-failed drw-crypto --beta-grid 0.04,0.06,0.08,0.10,0.12,0.15 --output-tag anti_failed_rank_family`
+- Report: `reports/anti_failed_rank_family.csv`
+- Generated candidates:
+  - `sub_anti_failed_rank_beta040.csv`
+  - `sub_anti_failed_rank_beta060.csv`
+  - `sub_anti_failed_rank_beta080.csv`
+  - `sub_anti_failed_rank_beta100.csv`
+  - `sub_anti_failed_rank_beta120.csv`
+  - `sub_anti_failed_rank_beta150.csv`
+- Best diagnostic tradeoff: `sub_anti_failed_rank_beta100.csv`
+  - no OOF/local score by design
+  - Spearman to first anchor: `0.999154`
+  - Spearman to failed tail: `0.890386`
+  - mean rank delta to anchor: `0.008920`
+- Decision: do not mix this with model-backed local scores. Treat `beta100` as the next diagnostic public-feedback probe only if we choose to spend one submission testing whether moving away from the second failed direction improves LB.
