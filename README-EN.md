@@ -6,6 +6,14 @@ Kaggle Auto Research turns competition research, data download, EDA, feature gen
 
 > This project is experimental. It is designed for research, prototyping, and internal competition workflows. Real Kaggle submissions are not executed automatically by default.
 
+## Project Status
+
+- Current version: `0.1.0`
+- Python: `>=3.11`
+- Main use cases: Kaggle tabular / time-series / low-signal competition automation
+- Default behavior: generate, validate, and log locally; never submit by default
+- Open-source entrypoints: [README.md](README.md), [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md)
+
 ## Highlights
 
 - **Agent-first workflow**: Research, EDA, Feature, Train, Iteration, and Submit stages communicate through filesystem artifacts.
@@ -221,7 +229,7 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
                                                      SUBMIT
 ```
 
-Detailed agent rules are in [agents.md](agents.md).
+Detailed agent rules are in [AGENTS.md](AGENTS.md).
 
 ## Why Agent-Oriented Tooling
 
@@ -256,7 +264,24 @@ Full roadmap: [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md).
 - Kaggle submissions are never automatic by default.
 - Real submission, data/model deletion, credential edits, and remote pushes require explicit user intent.
 - Training, feature generation, submission file generation, dry-run validation, and experiment logging can run automatically.
+- Kaggle data, models, submissions, notebook caches, and local credentials should not be committed to git.
+
+## Contributing
+
+Contributions are welcome, especially around agent reliability and open-source
+tooling:
+
+- `kar inspect <workspace>` schema/config checks;
+- experiment registry and run metadata;
+- metric/CV contracts;
+- public notebook mining;
+- reusable recipe system;
+- OOF ensemble builders;
+- `--json` output and stable exit codes.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Coding
+agents should read [AGENTS.md](AGENTS.md).
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE).

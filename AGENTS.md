@@ -4,7 +4,7 @@ kaggle-auto-research 的 Agent 系统设计与实战约束。
 
 ## Agent 角色分工
 
-```
+```text
 Orchestrator (Claude Code)
   解读用户意图 -> 调度 Skills/CLI -> 管理状态 -> 汇报结果
 
@@ -20,6 +20,7 @@ Orchestrator (Claude Code)
 - 所有大产物必须版本化保存，不覆盖已有模型/特征/提交文件。
 - 迭代和提交严格分离：训练、分析、集成可以自动执行，实际 Kaggle 提交必须受预算和用户决策约束。
 - CLI 必须优先提供短命令，例如 `kar auth`、`kar data <workspace>`，避免要求用户直接调用 `.venv` 路径。
+- 不提交 Kaggle 数据、模型、提交文件、notebook cache、本地凭据或大体积 workspace artifact。
 
 ## Agent 行为准则
 
@@ -51,7 +52,7 @@ Orchestrator (Claude Code)
 - **行为**: CV 训练、记录分数、保存模型和预测。
 - **约束**:
   - 只做本地评估，绝不触发提交。
-  - metric 必须严格匹配比赛指标和方向。例如 DRW Crypto 使用 R2/maximize，不能默认用 RMSE/minimize。
+  - metric 必须严格匹配比赛指标和方向。例如 DRW Crypto 使用 weighted/Pearson-style metric 时，不能默认用 RMSE/minimize。
   - 时间序列、金融或交易类数据默认使用 time-based CV，不使用随机切分。
   - 训练失败时保留错误信息，不覆盖已有成功模型。
 
@@ -80,7 +81,7 @@ Orchestrator (Claude Code)
 
 ## 状态机与通信
 
-```
+```text
 RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
                                 ^                       |
                                 |                       v
@@ -134,7 +135,7 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
 
 ## AIDE 树搜索集成
 
-```
+```text
 Root baseline
   |- v001
   |- v002
@@ -152,7 +153,7 @@ Root baseline
 
 ### 新竞赛启动
 
-```
+```bash
 kar init <name> --type <type> --url <url>
 kar auth
 kar data <name>
@@ -165,7 +166,7 @@ kar submit <name> --file submissions/sub_xxx.csv --dry-run
 
 ### 每日优化
 
-```
+```bash
 kar pipeline <name> --iterate 5
 kar analyze <name>
 kar ensemble <name>
@@ -174,7 +175,7 @@ kar submit <name> --status
 
 ### 预算耗尽
 
-```
+```bash
 kar submit <name> --file submissions/sub_xxx.csv
 # 若预算耗尽，进入 reserve queue
 kar submit <name> --flush
