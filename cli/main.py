@@ -667,6 +667,194 @@ def drw_ensemble(
             console.print(f"    [red]{error}[/red]")
 
 
+@app.command("drw-tail-ensemble")
+def drw_tail_ensemble(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    models: str = typer.Option("v032,v028,v010,v017,v029,v023", "--models", help="Comma-separated model versions"),
+    base_weights: str = typer.Option(
+        "0.53696968,0.22322101,0.15869722,0.04722773,0.020876,0.01300836",
+        "--base-weights",
+        help="Comma-separated base weights matching --models",
+    ),
+    samples: int = typer.Option(12000, "--samples", help="Random candidate weights per search family"),
+    seed: int = typer.Option(47, "--seed", help="Random seed"),
+    output_tag: str = typer.Option("tail_cli", "--output-tag", help="Submission filename tag"),
+):
+    """Build a DRW recency-weighted rank ensemble around a calibrated base vector."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import rankdata, spearmanr
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    versions = [m.strip() for m in models.split(",") if m.strip()]
+    base = np.array([float(x.strip()) for x in base_weights.split(",") if x.strip()], dtype="float64")
+    if len(versions) < 2 or len(base) != len(versions):
+        console.print("[red]--models and --base-weights must have the same length >= 2.[/red]")
+        raise typer.Exit(1)
+    base = base / base.sum()
+
+    rng = np.random.default_rng(seed)
+    y = pd.read_parquet(workspace / config.data.train, columns=[config.data.target_column])[
+        config.data.target_column
+    ].to_numpy(dtype="float32")
+
+    first_path = (
+        workspace
+        / "submissions"
+        / "sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv"
+    )
+    first_preds = pd.read_csv(first_path)["prediction"].to_numpy(dtype="float32") if first_path.exists() else None
+    first_rank = rankdata(first_preds) if first_preds is not None else None
+
+    def rank_normalize(values: np.ndarray) -> np.ndarray:
+        ranks = rankdata(values, method="average")
+        return ((ranks - 0.5) / len(ranks) * 2 - 1).astype("float32")
+
+    oof_columns = []
+    test_columns = []
+    common_mask = np.ones(len(y), dtype=bool)
+    for version in versions:
+        model_dir = workspace / "models" / version
+        oof_path = model_dir / "oof_preds.npy"
+        pred_path = model_dir / "test_preds.npy"
+        if not (oof_path.exists() and pred_path.exists()):
+            console.print(f"[red]Missing artifacts for {version}[/red]")
+            raise typer.Exit(1)
+        oof = np.load(oof_path)
+        preds = np.load(pred_path)
+        if len(oof) != len(y):
+            console.print(f"[red]OOF length mismatch for {version}[/red]")
+            raise typer.Exit(1)
+        common_mask &= np.abs(oof) > 1e-12
+        oof_columns.append(rank_normalize(oof))
+        test_columns.append(rank_normalize(preds))
+
+    oof_matrix = np.vstack(oof_columns).T.astype("float32")
+    test_matrix = np.vstack(test_columns).T.astype("float32")
+    n_rows = len(y)
+    fold_size = n_rows // 6
+    segments = {
+        "full": (0, n_rows),
+        "tail20": (int(n_rows * 0.8), n_rows),
+        "tail10": (int(n_rows * 0.9), n_rows),
+        "ts_fold5": (fold_size * 5, n_rows),
+    }
+    segment_data = {}
+    for key, (start, end) in segments.items():
+        mask = common_mask[start:end]
+        x = oof_matrix[start:end][mask]
+        target = y[start:end][mask]
+        centered_target = target - target.mean()
+        segment_data[key] = (
+            x - x.mean(axis=0, keepdims=True),
+            centered_target,
+            float(np.linalg.norm(centered_target)),
+        )
+
+    candidate_weights = [base.astype("float32")]
+    for scale in (360, 220, 140):
+        candidate_weights.append(rng.dirichlet((base + 0.002) * scale, size=samples).astype("float32"))
+    gaussian = base + rng.normal(0, 0.018, size=(samples, len(base)))
+    gaussian = np.clip(gaussian, 0, 0.65)
+    gaussian = gaussian / gaussian.sum(axis=1, keepdims=True)
+    candidate_weights.append(gaussian.astype("float32"))
+    weights = np.vstack(candidate_weights)
+
+    lower = np.maximum(base - 0.08, 0)
+    upper = np.minimum(base + 0.08, 0.70)
+    keep = np.ones(len(weights), dtype=bool)
+    for i in range(len(base)):
+        keep &= (weights[:, i] >= lower[i]) & (weights[:, i] <= upper[i])
+    weights = weights[keep]
+    if len(weights) == 0:
+        console.print("[red]No candidate weights after constraints.[/red]")
+        raise typer.Exit(1)
+
+    best_rows = []
+    for start in range(0, len(weights), 256):
+        batch = weights[start : start + 256]
+        values = {}
+        for key, (x, target, target_norm) in segment_data.items():
+            preds = batch @ x.T
+            values[key] = (preds @ target) / (np.linalg.norm(preds, axis=1) * target_norm)
+        composite = (
+            0.35 * values["ts_fold5"]
+            + 0.25 * values["tail10"]
+            + 0.20 * values["tail20"]
+            + 0.20 * values["full"]
+        )
+        for local_idx in np.argsort(composite)[-5:]:
+            best_rows.append({
+                "weights": weights[start + local_idx].astype("float64"),
+                "full": float(values["full"][local_idx]),
+                "tail20": float(values["tail20"][local_idx]),
+                "tail10": float(values["tail10"][local_idx]),
+                "ts_fold5": float(values["ts_fold5"][local_idx]),
+                "composite": float(composite[local_idx]),
+            })
+
+    best_rows = sorted(best_rows, key=lambda row: row["composite"], reverse=True)[:50]
+    for row in best_rows:
+        test_preds = test_matrix @ row["weights"].astype("float32")
+        if first_preds is not None and first_rank is not None:
+            test_rank = rankdata(test_preds)
+            row["spearman_to_first"] = float(spearmanr(test_preds, first_preds)[0])
+            row["mean_rank_delta_to_first"] = float(
+                np.mean(np.abs(test_rank - first_rank) / (len(test_rank) - 1))
+            )
+
+    best = best_rows[0]
+    test_preds = test_matrix @ best["weights"].astype("float32")
+    sample = pd.read_csv(workspace / config.data.sample_submission)
+    sample[sample.columns[1]] = test_preds
+
+    sub_path = workspace / "submissions" / f"sub_calibrated_{output_tag}.csv"
+    sample.to_csv(sub_path, index=False)
+    meta = {
+        "candidate": output_tag,
+        "models": versions,
+        "weights": {version: float(weight) for version, weight in zip(versions, best["weights"])},
+        "scores": {key: best[key] for key in ["full", "tail20", "tail10", "ts_fold5", "composite"]},
+        "spearman_to_first": best.get("spearman_to_first"),
+        "mean_rank_delta_to_first": best.get("mean_rank_delta_to_first"),
+        "submission": sub_path.name,
+        "search": {
+            "samples": samples,
+            "seed": seed,
+            "base_weights": {version: float(weight) for version, weight in zip(versions, base)},
+        },
+    }
+    sub_path.with_suffix(".json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    report_rows = []
+    for row in best_rows:
+        report_rows.append({
+            **{key: row[key] for key in ["composite", "full", "tail20", "tail10", "ts_fold5"]},
+            **{f"w_{version}": float(weight) for version, weight in zip(versions, row["weights"])},
+            "spearman_to_first": row.get("spearman_to_first"),
+            "mean_rank_delta_to_first": row.get("mean_rank_delta_to_first"),
+        })
+    report_path = workspace / "reports" / f"{output_tag}_tail_ensemble_search.csv"
+    pd.DataFrame(report_rows).to_csv(report_path, index=False)
+
+    validation = Submitter(workspace, config).validate(sub_path)
+    console.print(f"[green]Tail ensemble composite:[/green] {best['composite']:.6f}")
+    console.print(f"  Weights: {meta['weights']}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Report: {report_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
+
+
 @app.command("drw-public")
 def drw_public(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),

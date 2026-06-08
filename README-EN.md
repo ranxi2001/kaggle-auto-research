@@ -224,6 +224,7 @@ kar drw-ridge drw-crypto --top-k 180 --alphas 300,1000,3000,10000 --cv timeserie
 kar drw-public drw-crypto --model lgbm --folds 3
 kar drw-ensemble drw-crypto --models v010,v011,v007,v003
 kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018,v019,v020,v021,v022,v023,v024,v025,v026 --method optimize --transform ranknorm
+kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
 ```
 
 ## Workspace Layout

@@ -77,3 +77,13 @@ Then update:
 - `reports/experiment_log.md`
 - local submission history if `kar sync-lb` exists later
 - README progress if the result materially changes the project status
+
+## Reproduce The Candidate Search
+
+The calibrated tail ensemble search is available as a CLI command:
+
+```powershell
+.\kar.cmd drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
+```
+
+Use the explicit submit command above for the current locked recommendation.
