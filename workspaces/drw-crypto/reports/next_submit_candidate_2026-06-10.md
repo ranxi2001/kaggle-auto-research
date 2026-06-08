@@ -73,6 +73,17 @@ Audit:
 
 Prefer the conservative candidate unless deliberately testing the stronger `v032` tail signal.
 
+## Rejected Follow-up
+
+`sub_anchor_blend_v033.csv` was generated after adding Ridge `v033` (`top_k=210`, timeseries, alpha `7500`). It is valid but not recommended:
+
+| File | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor |
+| --- | ---: | ---: | ---: | ---: |
+| `sub_anchor_blend_conservative.csv` | `0.125011` | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anchor_blend_v033.csv` | `0.123785` | `0.995527` | `0.934960` | `0.020516` |
+
+The v033 blend is slightly closer to the best anchor, but it gives up too much local composite. Keep it as a fallback only after the conservative candidate has been tested.
+
 ## After Submission
 
 Run:

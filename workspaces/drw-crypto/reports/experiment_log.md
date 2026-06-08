@@ -373,3 +373,30 @@
   - missing predictions: `0`
   - duplicate IDs: `0`
 - Decision: recommend `sub_anchor_blend_conservative.csv` for the next available submission because it is closer to the current public-LB best and further from the failed tail direction. Use `sub_anchor_blend_safe.csv` only if deliberately accepting higher movement toward the `v032` tail signal.
+
+## Ridge v033 and Anchor Blend Check - 2026-06-09
+
+- Ran a bounded Ridge experiment:
+  `kar drw-ridge drw-crypto --top-k 210 --cv timeseries --folds 5 --alphas 3000,5000,7500,10000,30000`
+- Output model: `models/v033`
+- Output submission: `sub_076_v033.csv`
+- Best alpha: `7500`
+- OOF Pearson: `0.135032`
+- Fold scores: `0.193575, 0.130195, 0.170884, 0.124920, 0.080229`
+- Diagnostics versus submitted candidates:
+  - tail20: `0.082329`
+  - tail10: `0.140684`
+  - tail5: `0.174613`
+  - Spearman to best anchor: `0.905584`
+  - Spearman to failed tail submission: `0.885442`
+  - Spearman to conservative anchor blend: `0.918073`
+- Ran an anchor-blend scan including `v033`:
+  `kar drw-anchor-blend drw-crypto --groups with_v033:v021+v023+v033,safe033:v016+v017+v031+v032+v033,v033:v033 --alpha-grid 0.08,0.10,0.12,0.15,0.18,0.20,0.21 --min-spearman 0.994 --max-rank-delta 0.025 --output-tag anchor_blend_v033`
+- Best valid v033 blend: `sub_anchor_blend_v033.csv`
+  - group: `v016+v017+v031+v032+v033`
+  - alpha: `0.21`
+  - composite: `0.123785`
+  - Spearman to best anchor: `0.995527`
+  - Spearman to failed tail submission: `0.934960`
+  - mean rank delta to anchor: `0.020516`
+- Decision: do not replace `sub_anchor_blend_conservative.csv` as the next-submit candidate. The v033 blend is more conservative but has lower composite (`0.123785` vs `0.125011`) and does not add enough evidence to justify using the next Kaggle submission on it.
