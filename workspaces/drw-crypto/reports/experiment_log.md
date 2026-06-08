@@ -146,3 +146,19 @@
   - ts_fold5: `0.117269`
   - composite: `0.122449`
 - Interpretation: this supersedes the previous small-Ridge conservative ensemble (`composite 0.121069`) as the best second LB probe. It deliberately sacrifices some full OOF versus the first submitted ensemble to improve recency-weighted diagnostics after the first LB gap.
+
+## Submission Delta Risk Check - 2026-06-09
+
+- Compared the first submitted file against the current KFold conservative candidate. Reports:
+  - `reports/submission_delta_analysis.json`
+  - `reports/candidate_correlation_matrix.csv`
+- Current candidate: `sub_calibrated_ensemble_conservative_kfold_v017_v023_v028_v029_v031_v032_v010.csv`
+- Difference versus first submitted ensemble:
+  - Pearson: `0.952681`
+  - Spearman: `0.954108`
+  - mean absolute rank delta: `0.062890`
+  - p90 absolute rank delta: `0.146736`
+  - top 1% overlap: `0.725887`
+  - bottom 1% overlap: `0.635384`
+- Interpretation: the current candidate is not a totally new signal; it is a conservative rank adjustment of the first submission. That is appropriate after the first submission showed OOF optimism, but it limits upside.
+- Single-model alternatives (`v017_single`, `v032_model`) differ more from the first submission, but carry higher score risk. The current KFold conservative ensemble remains the recommended second probe if using the last daily submission.
