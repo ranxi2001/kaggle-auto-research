@@ -458,3 +458,32 @@
   - `balanced_no_v032` at `alpha=0.24`: composite `0.126893`, Spearman to failed `0.913455`
   - `low_failed` at `alpha=0.24`: composite `0.125755`, Spearman to failed `0.905323`
 - Decision: do not replace the next-submit candidate. The `alpha=0.22` gain is only `0.000147` composite while moving closer to the known failed submission and further from the best anchor.
+
+## Risk-Aware Anchor Blend Selection - 2026-06-09
+
+- Added risk-aware selection options to `kar drw-anchor-blend`:
+  - `--selection-metric composite|utility`
+  - `--failed-threshold`
+  - `--risk-penalty`
+- The command now writes `utility`, `failed_excess`, `anchor_shortfall`, and `rank_delta_excess` to scan reports.
+- Ran:
+  `kar drw-anchor-blend drw-crypto --groups conservative:v016+v017+v031+v032,low_failed:v021+v023+v017,balanced_no_v032:v016+v017+v021+v023,strong_core:v021+v023+v025,v021:v021,v023:v023 --alpha-grid 0.10,0.12,0.15,0.18,0.20,0.21,0.22,0.24 --min-spearman 0.993 --max-rank-delta 0.030 --selection-metric utility --failed-threshold 0.935 --risk-penalty 0.60 --output-tag anchor_blend_utility_scan`
+- Output: `sub_anchor_blend_utility_scan.csv`
+- Report: `reports/anchor_blend_utility_scan_anchor_blend_scan.csv`
+- Selected candidate:
+  - group: `v016+v017+v031+v032`
+  - alpha: `0.18`
+  - composite: `0.129080`
+  - utility: `0.129080`
+  - Spearman to best anchor: `0.995783`
+  - Spearman to failed tail submission: `0.934484`
+  - mean rank delta to anchor: `0.019854`
+- Audit passed against sample submission:
+  - rows: `538150`
+  - columns: `ID,prediction`
+  - ID order match: `true`
+  - missing predictions: `0`
+  - duplicate IDs: `0`
+  - prediction mean/std: `0.000000 / 0.559251`
+  - prediction min/max: `-0.999989 / 0.999991`
+- Decision update: make `sub_anchor_blend_utility_scan.csv` the next-submit candidate. It gives up `0.000464` raw composite versus `sub_anchor_blend_conservative.csv` (`alpha=0.21`) but stays below the failed-direction threshold and closer to the current public-best anchor.

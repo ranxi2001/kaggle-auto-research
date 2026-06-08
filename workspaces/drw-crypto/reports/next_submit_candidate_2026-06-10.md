@@ -11,26 +11,26 @@
 
 ## Recommendation
 
-When the daily budget resets, submit the conservative anchor blend first:
+When the daily budget resets, submit the utility-selected conservative anchor blend first:
 
 ```powershell
-.\kar.cmd submit drw-crypto --file submissions\sub_anchor_blend_conservative.csv --force
+.\kar.cmd submit drw-crypto --file submissions\sub_anchor_blend_utility_scan.csv --force
 ```
 
-Use `--force` because the candidate is intentionally not optimizing the original full OOF score. It is anchored against the best real LB submission and should be judged as an LB calibration experiment.
+Use `--force` because the candidate is intentionally not optimizing the original full OOF score. It is anchored against the best real LB submission and selected by a utility score that penalizes similarity to the known failed submission.
 
 ## Candidate
 
 File:
 
 ```text
-sub_anchor_blend_conservative.csv
+sub_anchor_blend_utility_scan.csv
 ```
 
 Generation command:
 
 ```powershell
-.\kar.cmd drw-anchor-blend drw-crypto --groups safe:v016+v017+v031+v032 --alpha-grid 0.15,0.18,0.19,0.20,0.21 --min-spearman 0.994 --max-rank-delta 0.025 --output-tag anchor_blend_conservative
+.\kar.cmd drw-anchor-blend drw-crypto --groups conservative:v016+v017+v031+v032,low_failed:v021+v023+v017,balanced_no_v032:v016+v017+v021+v023,strong_core:v021+v023+v025,v021:v021,v023:v023 --alpha-grid 0.10,0.12,0.15,0.18,0.20,0.21,0.22,0.24 --min-spearman 0.993 --max-rank-delta 0.030 --selection-metric utility --failed-threshold 0.935 --risk-penalty 0.60 --output-tag anchor_blend_utility_scan
 ```
 
 Blend:
@@ -40,15 +40,16 @@ Blend:
 | anchor | first submitted public-best ensemble |
 | anchor OOF source | metadata-weighted rank ensemble |
 | group | `v016+v017+v031+v032` |
-| alpha | `0.21` |
-| composite | `0.129544` |
-| full | `0.140456` |
-| tail20 / ts_fold5 | `0.115519` |
-| tail10 | `0.109920` |
-| tail5 | `0.151956` |
-| Spearman to best anchor | `0.994191` |
-| Spearman to failed tail submission | `0.938277` |
-| mean rank delta to anchor | `0.023247` |
+| alpha | `0.18` |
+| utility | `0.129080` |
+| composite | `0.129080` |
+| full | `0.140030` |
+| tail20 / ts_fold5 | `0.114907` |
+| tail10 | `0.109608` |
+| tail5 | `0.151531` |
+| Spearman to best anchor | `0.995783` |
+| Spearman to failed tail submission | `0.934484` |
+| mean rank delta to anchor | `0.019854` |
 
 Audit:
 
@@ -60,19 +61,20 @@ Audit:
 | missing predictions | `0` |
 | duplicate IDs | `0` |
 | prediction mean | `0.000000` |
-| prediction std | `0.556722` |
+| prediction std | `0.559251` |
 | prediction min/max | `-0.999989 / 0.999991` |
 
 ## Alternative
 
-`sub_anchor_blend_safe.csv` has slightly higher local composite (`0.129910`) but moves more toward the failed tail direction:
+`sub_anchor_blend_conservative.csv` has higher raw local composite (`0.129544`) but crosses the failed-direction threshold used by the utility selector:
 
 | File | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor |
 | --- | ---: | ---: | ---: | ---: |
-| `sub_anchor_blend_safe.csv` | `0.129910` | `0.991515` | `0.948163` | `0.028320` |
+| `sub_anchor_blend_utility_scan.csv` | `0.129080` | `0.995783` | `0.934484` | `0.019854` |
 | `sub_anchor_blend_conservative.csv` | `0.129544` | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anchor_blend_safe.csv` | `0.129910` | `0.991515` | `0.948163` | `0.028320` |
 
-Prefer the conservative candidate unless deliberately testing the stronger `v032` tail signal.
+Prefer the utility candidate for the next submission because the first two real submissions showed that local composite alone overstates riskier moves. Use `sub_anchor_blend_conservative.csv` only if deliberately accepting a higher failed-direction similarity for more local score.
 
 ## Rejected Follow-up
 
@@ -80,7 +82,7 @@ Prefer the conservative candidate unless deliberately testing the stronger `v032
 
 | File | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor |
 | --- | ---: | ---: | ---: | ---: |
-| `sub_anchor_blend_conservative.csv` | `0.129544` | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anchor_blend_utility_scan.csv` | `0.129080` | `0.995783` | `0.934484` | `0.019854` |
 | `sub_anchor_blend_v033.csv` | `0.128466` | `0.995527` | `0.934960` | `0.020516` |
 
 The v033 blend is slightly closer to the best anchor, but it gives up local composite. Keep it as a fallback only after the conservative candidate has been tested.
@@ -91,7 +93,8 @@ The v033 blend is slightly closer to the best anchor, but it gives up local comp
 
 | Candidate | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor | Decision |
 | --- | ---: | ---: | ---: | ---: | --- |
-| conservative `alpha=0.21` | `0.129544` | `0.994191` | `0.938277` | `0.023247` | submit first |
+| conservative `alpha=0.18` | `0.129080` | `0.995783` | `0.934484` | `0.019854` | submit first |
+| conservative `alpha=0.21` | `0.129544` | `0.994191` | `0.938277` | `0.023247` | higher composite, more failed-direction risk |
 | conservative `alpha=0.22` | `0.129691` | `0.993600` | `0.939500` | `0.024383` | too little gain for more drift |
 | balanced_no_v032 `alpha=0.24` | `0.126893` | `0.997147` | `0.913455` | `0.016538` | safer but too weak |
 | low_failed `alpha=0.24` | `0.125755` | `0.998162` | `0.905323` | `0.013302` | safer but too weak |

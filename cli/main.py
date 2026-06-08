@@ -983,6 +983,21 @@ def drw_anchor_blend(
     ),
     min_spearman: float = typer.Option(0.99, "--min-spearman", help="Minimum Spearman correlation to anchor"),
     max_rank_delta: float = typer.Option(0.035, "--max-rank-delta", help="Maximum mean absolute rank delta to anchor"),
+    selection_metric: str = typer.Option(
+        "composite",
+        "--selection-metric",
+        help="Best-candidate metric: composite|utility",
+    ),
+    failed_threshold: float = typer.Option(
+        0.935,
+        "--failed-threshold",
+        help="Spearman-to-failed level where utility starts applying risk penalty",
+    ),
+    risk_penalty: float = typer.Option(
+        0.60,
+        "--risk-penalty",
+        help="Penalty multiplier for failed-direction similarity above --failed-threshold",
+    ),
     output_tag: str = typer.Option("anchor_blend", "--output-tag", help="Submission filename tag"),
 ):
     """Build a conservative DRW candidate by small rank blends around a submitted LB anchor."""
@@ -998,6 +1013,9 @@ def drw_anchor_blend(
 
     workspace = get_workspace(name)
     config = load_config(workspace)
+    if selection_metric not in {"composite", "utility"}:
+        console.print("[red]--selection-metric must be composite or utility.[/red]")
+        raise typer.Exit(1)
     submissions_dir = workspace / "submissions"
     anchor_path = submissions_dir / anchor_file
     anchor_meta_path = anchor_path.with_suffix(".json")
@@ -1139,18 +1157,28 @@ def drw_anchor_blend(
             spearman_to_failed = None
             if failed_rank is not None:
                 spearman_to_failed = float(np.corrcoef(candidate_rank, failed_rank)[0, 1])
+            failed_excess = 0.0
+            if spearman_to_failed is not None:
+                failed_excess = max(0.0, spearman_to_failed - failed_threshold)
+            anchor_shortfall = max(0.0, min_spearman - spearman_to_anchor)
+            rank_excess = max(0.0, mean_rank_delta - max_rank_delta)
+            utility = composite - risk_penalty * failed_excess - 0.35 * anchor_shortfall - 0.90 * rank_excess
             rows.append({
                 "group": group_name,
                 "models": "+".join(versions),
                 "alpha": alpha,
                 **scores,
                 "composite": float(composite),
+                "utility": float(utility),
+                "failed_excess": float(failed_excess),
+                "anchor_shortfall": float(anchor_shortfall),
+                "rank_delta_excess": float(rank_excess),
                 "spearman_to_anchor": spearman_to_anchor,
                 "spearman_to_failed": spearman_to_failed,
                 "mean_rank_delta_to_anchor": mean_rank_delta,
             })
 
-    report = pd.DataFrame(rows).sort_values("composite", ascending=False)
+    report = pd.DataFrame(rows).sort_values(selection_metric, ascending=False)
     safe = report[
         (report["spearman_to_anchor"] >= min_spearman)
         & (report["mean_rank_delta_to_anchor"] <= max_rank_delta)
@@ -1162,7 +1190,7 @@ def drw_anchor_blend(
         console.print(f"  Report: {report_path}")
         raise typer.Exit(1)
 
-    best = safe.sort_values(["composite", "spearman_to_anchor"], ascending=[False, False]).iloc[0].to_dict()
+    best = safe.sort_values([selection_metric, "spearman_to_anchor"], ascending=[False, False]).iloc[0].to_dict()
     best_versions = group_specs[str(best["group"])]
     best_group_test = np.mean([cached(version)[1] for version in best_versions], axis=0).astype("float32")
     final_test = ((1 - best["alpha"]) * anchor_rank + best["alpha"] * best_group_test).astype("float32")
@@ -1183,7 +1211,7 @@ def drw_anchor_blend(
         "alpha": float(best["alpha"]),
         "scores": {
             key: float(best[key])
-            for key in ["full", "tail20", "tail10", "tail5", "ts_fold5", "composite"]
+            for key in ["full", "tail20", "tail10", "tail5", "ts_fold5", "composite", "utility"]
         },
         "spearman_to_anchor": float(best["spearman_to_anchor"]),
         "spearman_to_failed": None if pd.isna(best["spearman_to_failed"]) else float(best["spearman_to_failed"]),
@@ -1191,6 +1219,9 @@ def drw_anchor_blend(
         "constraints": {
             "min_spearman": min_spearman,
             "max_rank_delta": max_rank_delta,
+            "selection_metric": selection_metric,
+            "failed_threshold": failed_threshold,
+            "risk_penalty": risk_penalty,
         },
         "submission": sub_path.name,
     }
@@ -1201,6 +1232,7 @@ def drw_anchor_blend(
 
     validation = Submitter(workspace, config).validate(sub_path)
     console.print(f"[green]Anchor blend composite:[/green] {best['composite']:.6f}")
+    console.print(f"  Utility: {float(best['utility']):.6f} ({selection_metric})")
     console.print(f"  Group: {best['group']} alpha={float(best['alpha']):.3f}")
     console.print(f"  Spearman to anchor: {float(best['spearman_to_anchor']):.6f}")
     console.print(f"  Submission: {sub_path}")
