@@ -6,9 +6,9 @@ competition:
   type: crypto
   url: https://www.kaggle.com/competitions/drw-crypto-market-prediction
 data:
-  id_column: id
+  id_column: ID
   sample_submission: data/raw/sample_submission.csv
-  target_column: target
+  target_column: label
   test: data/raw/test.parquet
   train: data/raw/train.parquet
 model:

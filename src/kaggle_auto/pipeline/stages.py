@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 from ..config import WorkspaceConfig
 from .runner import stage
@@ -18,6 +19,15 @@ def run_research(workspace: Path, config: WorkspaceConfig) -> dict:
     scraper = CompetitionScraper(slug)
 
     notebooks = scraper.get_top_notebooks(limit=10)
+    report_path = workspace / "reports" / "research_notes.md"
+
+    if not notebooks and report_path.exists() and report_path.stat().st_size > 0:
+        return {
+            "status": "completed",
+            "report_path": str(report_path),
+            "notebooks_found": 0,
+            "message": "Kept existing research report because no notebooks were found.",
+        }
 
     competition_info = {
         "title": config.competition.name,
@@ -31,7 +41,7 @@ def run_research(workspace: Path, config: WorkspaceConfig) -> dict:
     report_path = scraper.generate_research_report(
         competition_info=competition_info,
         notebooks=notebooks,
-        output_path=workspace / "reports" / "research_notes.md",
+        output_path=report_path,
     )
 
     return {
@@ -46,22 +56,25 @@ def run_eda(workspace: Path, config: WorkspaceConfig) -> dict:
     """Run EDA stage."""
     from ..eda import DataProfiler, EDAReport
 
+    max_rows = 100_000
     train_path = workspace / config.data.train
     if not train_path.exists():
         return {"status": "skipped", "reason": f"Train data not found: {train_path}"}
 
     if str(train_path).endswith(".parquet"):
-        train_df = pd.read_parquet(train_path)
+        train_df, train_total_rows = _read_table_sample(train_path, max_rows=max_rows)
     else:
-        train_df = pd.read_csv(train_path)
+        train_df = pd.read_csv(train_path, nrows=max_rows)
+        train_total_rows = None
 
     test_path = workspace / config.data.test
     test_df = None
+    test_total_rows = None
     if test_path.exists():
         if str(test_path).endswith(".parquet"):
-            test_df = pd.read_parquet(test_path)
+            test_df, test_total_rows = _read_table_sample(test_path, max_rows=max_rows)
         else:
-            test_df = pd.read_csv(test_path)
+            test_df = pd.read_csv(test_path, nrows=max_rows)
 
     report = EDAReport(workspace)
     report_path = report.generate(
@@ -69,13 +82,53 @@ def run_eda(workspace: Path, config: WorkspaceConfig) -> dict:
         test_df=test_df,
         target_col=config.data.target_column,
     )
+    _append_sample_note(report_path, max_rows, train_total_rows, test_total_rows)
 
     return {
         "status": "completed",
         "report_path": str(report_path),
-        "n_rows": len(train_df),
+        "n_rows": train_total_rows or len(train_df),
         "n_cols": len(train_df.columns),
+        "sample_rows": len(train_df),
     }
+
+
+def _read_table_sample(path: Path, max_rows: int) -> tuple[pd.DataFrame, int]:
+    parquet_file = pq.ParquetFile(path)
+    total_rows = parquet_file.metadata.num_rows
+    if total_rows <= max_rows:
+        return pd.read_parquet(path), total_rows
+
+    batches = []
+    rows_read = 0
+    for batch in parquet_file.iter_batches(batch_size=min(max_rows, 25_000)):
+        batches.append(batch.to_pandas())
+        rows_read += batch.num_rows
+        if rows_read >= max_rows:
+            break
+    df = pd.concat(batches, ignore_index=True).head(max_rows)
+    return df, total_rows
+
+
+def _append_sample_note(
+    report_path: Path,
+    max_rows: int,
+    train_total_rows: int | None,
+    test_total_rows: int | None,
+) -> None:
+    notes = [
+        "",
+        "## Profiling Scope",
+        "",
+        f"- EDA sampled at most {max_rows:,} rows per split for local speed and memory safety.",
+    ]
+    if train_total_rows is not None:
+        notes.append(f"- Train total rows: {train_total_rows:,}")
+    if test_total_rows is not None:
+        notes.append(f"- Test total rows: {test_total_rows:,}")
+    with open(report_path, "a") as f:
+        f.write("\n".join(notes))
+        f.write("\n")
 
 
 @stage("features")

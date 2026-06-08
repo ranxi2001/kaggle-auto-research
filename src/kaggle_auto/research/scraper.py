@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -33,12 +34,13 @@ class CompetitionScraper:
     def __init__(self, competition_slug: str):
         self.slug = competition_slug
         self.base_url = f"https://www.kaggle.com/competitions/{competition_slug}"
+        self._kaggle_cmd = [sys.executable, "-m", "kaggle"]
 
     def get_top_notebooks(self, limit: int = 10) -> list[NotebookInfo]:
         """Get top-scoring public notebooks."""
         try:
             result = subprocess.run(
-                ["kaggle", "kernels", "list",
+                [*self._kaggle_cmd, "kernels", "list",
                  "--competition", self.slug,
                  "--sort-by", "voteCount",
                  "--page-size", str(limit),
@@ -73,7 +75,7 @@ class CompetitionScraper:
         """Fetch competition overview/description via kaggle API."""
         try:
             result = subprocess.run(
-                ["kaggle", "competitions", "list", "-s", self.slug, "--csv"],
+                [*self._kaggle_cmd, "competitions", "list", "-s", self.slug, "--csv"],
                 capture_output=True, text=True, timeout=30,
             )
             if result.returncode == 0:
@@ -111,7 +113,7 @@ class CompetitionScraper:
 
         try:
             result = subprocess.run(
-                ["kaggle", "competitions", "files", self.slug, "--csv"],
+                [*self._kaggle_cmd, "competitions", "files", self.slug, "--csv"],
                 capture_output=True, text=True, timeout=30,
             )
             if result.returncode == 0:

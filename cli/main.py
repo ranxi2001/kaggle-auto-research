@@ -1,7 +1,9 @@
 """CLI entry point for kaggle-auto-research (kar command)."""
 
 import os
+import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import typer
@@ -24,6 +26,65 @@ app = typer.Typer(
     help="kaggle-auto-research: AI Agent powered Kaggle competition framework",
 )
 console = Console()
+
+
+@app.command()
+def auth():
+    """Log in to Kaggle and show credential status."""
+    console.print("[yellow]Opening Kaggle login...[/yellow]")
+    result = subprocess.run([sys.executable, "-m", "kaggle", "auth", "login"])
+    if result.returncode != 0:
+        console.print("[red]Kaggle login failed.[/red]")
+        raise typer.Exit(result.returncode)
+
+    console.print("\n[yellow]Checking Kaggle credentials...[/yellow]")
+    status = subprocess.run([sys.executable, "-m", "kaggle", "config", "view"])
+    if status.returncode == 0:
+        console.print("[green]Kaggle auth OK.[/green]")
+    else:
+        console.print("[red]Kaggle auth check failed.[/red]")
+        raise typer.Exit(status.returncode)
+
+
+@app.command()
+def data(name: str = typer.Argument(..., help="Competition workspace name")):
+    """Download and extract Kaggle competition data for a workspace."""
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    raw_dir = workspace / "data" / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    slug = config.competition.name
+    zip_files = sorted(raw_dir.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if zip_files:
+        console.print(f"[dim]Using existing archive:[/dim] {zip_files[0].name}")
+    else:
+        console.print(f"[yellow]Downloading data:[/yellow] {slug}")
+        result = subprocess.run([
+            sys.executable, "-m", "kaggle", "competitions", "download",
+            slug, "-p", str(raw_dir),
+        ])
+        if result.returncode != 0:
+            console.print("[red]Download failed.[/red]")
+            raise typer.Exit(result.returncode)
+
+        zip_files = sorted(raw_dir.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not zip_files:
+        console.print("[dim]No zip file found to extract.[/dim]")
+        return
+
+    archive = zip_files[0]
+    console.print(f"[yellow]Extracting:[/yellow] {archive.name}")
+    with zipfile.ZipFile(archive) as zf:
+        zf.extractall(raw_dir)
+
+    files = sorted(p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() != ".zip")
+    console.print("[green]Data ready.[/green]")
+    for p in files:
+        console.print(f"  {p.name} ({p.stat().st_size / 1024 / 1024:.1f} MB)")
 
 
 @app.command()
@@ -363,7 +424,7 @@ def pipeline(
                 if not isinstance(stage_result, dict):
                     continue
                 status = stage_result.get("status", "unknown")
-                icon = "[green]✓[/green]" if status == "completed" else "[dim]○[/dim]"
+                icon = "[green]OK[/green]" if status == "completed" else "[dim]--[/dim]"
                 console.print(f"  {icon} {stage_name}: {status}")
 
 
@@ -503,7 +564,7 @@ def improve(
         for stage_name, stage_result in result.items():
             if isinstance(stage_result, dict):
                 s = stage_result.get("status", "unknown")
-                icon = "✓" if s == "completed" else "○"
+                icon = "OK" if s == "completed" else "--"
                 console.print(f"  {icon} {stage_name}: {s}")
         console.print()
 

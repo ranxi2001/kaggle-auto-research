@@ -130,5 +130,5 @@ class LightGBMModel(BaseModel):
             from sklearn.metrics import log_loss
             return log_loss(y_true, y_pred)
         else:
-            from sklearn.metrics import mean_squared_error
-            return mean_squared_error(y_true, y_pred, squared=False)
+            from sklearn.metrics import r2_score
+            return r2_score(y_true, y_pred)
