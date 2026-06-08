@@ -709,3 +709,9 @@
   - flush command after budget reset: `kar submit drw-crypto --flush`
   - fallback candidates and post-submit sync commands
 - Added `tests/test_drw_next_submit_plan.py` to verify the tracked plan, reserve queue, and candidate ranking report all point to the same queued candidate.
+
+## Candidate Score JSON Output - 2026-06-10
+
+- Added `--json-output` to `kar drw-score-candidates`.
+- The JSON report replaces missing numeric values with `null` and writes with `allow_nan=False`, so strict JSON parsers can consume it safely.
+- Smoke-tested with `json_output_smoke`; verified `sub_anti_failed_rank_beta100.csv` has `local_score: null` instead of non-standard `NaN`.

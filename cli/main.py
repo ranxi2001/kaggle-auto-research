@@ -1412,6 +1412,7 @@ def drw_score_candidates(
         help="Comma-separated real submissions that underperformed and should be treated as negative directions",
     ),
     output_tag: str = typer.Option("candidate_geometry_score", "--output-tag", help="Report filename tag"),
+    json_output: bool = typer.Option(False, "--json-output", help="Also write a strict JSON report"),
 ):
     """Score DRW candidates against real submission geometry and local metadata."""
     import json
@@ -1536,6 +1537,10 @@ def drw_score_candidates(
     report = pd.DataFrame(rows).sort_values("geometry_score", ascending=False)
     report_path = workspace / "reports" / f"{output_tag}.csv"
     report.to_csv(report_path, index=False)
+    json_path = workspace / "reports" / f"{output_tag}.json"
+    if json_output:
+        json_rows = report.astype(object).where(pd.notna(report), None).to_dict(orient="records")
+        json_path.write_text(json.dumps(json_rows, indent=2, allow_nan=False), encoding="utf-8")
 
     table = Table(title=f"Candidate Geometry Score: {name}")
     for column in ["file", "local", "anchor", "max_failed", "rank_delta", "score"]:
@@ -1551,6 +1556,8 @@ def drw_score_candidates(
         )
     console.print(table)
     console.print(f"  Report: {report_path}")
+    if json_output:
+        console.print(f"  JSON: {json_path}")
 
 
 @app.command("drw-anti-failed")
