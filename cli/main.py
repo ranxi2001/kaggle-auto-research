@@ -1154,6 +1154,8 @@ def submit(
 
     # Submit specific file
     if file:
+        import json
+
         file_path = Path(file)
         if not file_path.is_absolute():
             file_path = workspace / file_path
@@ -1173,7 +1175,35 @@ def submit(
                     console.print(f"    [red]{e}[/red]")
             return
 
-        result = submitter.submit(file_path, message="Manual submit", force=force)
+        meta_path = file_path.with_suffix(".json")
+        cv_score = None
+        model_version = ""
+        message = f"Manual submit {file_path.name}"
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                cv_score = meta.get("oof_pearson") or meta.get("mean_score")
+                versions = []
+                for item in meta.get("models", []):
+                    if isinstance(item, dict):
+                        versions.append(item.get("version", ""))
+                    else:
+                        versions.append(str(item))
+                versions = [v for v in versions if v]
+                if versions:
+                    model_version = ",".join(versions)
+                if cv_score is not None:
+                    message = f"Manual submit {file_path.name} CV={float(cv_score):.6f}"
+            except Exception as exc:
+                console.print(f"[yellow]Could not read metadata {meta_path}: {exc}[/yellow]")
+
+        result = submitter.submit(
+            file_path,
+            message=message,
+            force=force,
+            cv_score=float(cv_score) if cv_score is not None else None,
+            model_version=model_version,
+        )
         if result.get("success"):
             console.print(f"[green]Submitted![/green] Remaining: {result.get('remaining_today', '?')}")
         elif result.get("queued"):
