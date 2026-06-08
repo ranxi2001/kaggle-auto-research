@@ -708,3 +708,4 @@
   - pre-check command: `kar submit drw-crypto --status`
   - flush command after budget reset: `kar submit drw-crypto --flush`
   - fallback candidates and post-submit sync commands
+- Added `tests/test_drw_next_submit_plan.py` to verify the tracked plan, reserve queue, and candidate ranking report all point to the same queued candidate.
