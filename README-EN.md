@@ -74,12 +74,12 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 - Initial auto-feature baseline: CV R2 `-0.002859`
 - Clean feature selection + LightGBM: best single-model Pearson around `0.0724`
 - Public-notebook-style XGB time-slice: Pearson `0.053338`, but useful as an ensemble-diversity signal
-- Closed-form Ridge on top-correlation features: Pearson `0.125693`
-- Pearson OOF simplex ensemble: Pearson `0.133473`
-- Current best local submission: `sub_ensemble_v005_v006_v007_v010_v011_v012_v015_v017.csv`
+- Closed-form Ridge on top-correlation features: TimeSeriesSplit Pearson `0.138700`
+- Pearson OOF simplex ensemble: common-valid-OOF Pearson `0.144227`
+- Current best local submission: `sub_ensemble_v005_v010_v012_v015_v017_v018.csv`
 - Public leaderboard top is around `0.11 - 0.14`
 
-Conclusion: the toolchain can run end-to-end and improve; the current local OOF score is now near the strong public-leaderboard range. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to validate CV/LB consistency, reduce possible time-leakage risk, and turn Ridge/XGB/LGBM blends into reusable recipes.
+Conclusion: the toolchain can run end-to-end and improve; the current local OOF score is now near the strong public-leaderboard range. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to use a small number of real submissions to validate CV/LB consistency and keep turning Ridge/XGB/LGBM blends into reusable recipes.
 
 ## Installation
 
@@ -176,10 +176,10 @@ DRW Crypto research helpers:
 
 ```bash
 kar drw-clean drw-crypto --top-k 130 --n-estimators 1200 --learning-rate 0.015
-kar drw-ridge drw-crypto --top-k 140 --alphas 1,10,100,1000,10000
+kar drw-ridge drw-crypto --top-k 140 --alphas 1,10,100,1000,10000 --cv timeseries
 kar drw-public drw-crypto --model lgbm --folds 3
 kar drw-ensemble drw-crypto --models v010,v011,v007,v003
-kar drw-ensemble drw-crypto --models v005,v006,v007,v010,v011,v012,v015,v017 --method optimize
+kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018 --method optimize
 ```
 
 ## Workspace Layout

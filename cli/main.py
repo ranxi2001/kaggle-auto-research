@@ -296,7 +296,8 @@ def drw_clean(
 def drw_ridge(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
     top_k: int = typer.Option(140, "--top-k", help="Top target-correlation features to use"),
-    folds: int = typer.Option(5, "--folds", help="KFold splits without shuffle"),
+    folds: int = typer.Option(5, "--folds", help="CV splits"),
+    cv: str = typer.Option("kfold", "--cv", help="CV strategy: kfold|timeseries"),
     alphas: str = typer.Option("1,10,100,1000,10000", "--alphas", help="Comma-separated Ridge alphas"),
 ):
     """Train a fast closed-form Ridge candidate for DRW and generate a submission."""
@@ -307,7 +308,7 @@ def drw_ridge(
     import numpy as np
     import pandas as pd
     from scipy.stats import pearsonr
-    from sklearn.model_selection import KFold
+    from sklearn.model_selection import KFold, TimeSeriesSplit
 
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
@@ -377,7 +378,14 @@ def drw_ridge(
         }
         return x_valid @ coef + intercept, x_target @ coef + intercept, model_state
 
-    kfold = KFold(n_splits=folds, shuffle=False)
+    if cv == "kfold":
+        splitter = KFold(n_splits=folds, shuffle=False)
+    elif cv == "timeseries":
+        splitter = TimeSeriesSplit(n_splits=folds)
+    else:
+        console.print("[red]--cv must be kfold or timeseries.[/red]")
+        raise typer.Exit(1)
+
     best = None
     started_at = time.time()
     for alpha in alpha_values:
@@ -385,7 +393,7 @@ def drw_ridge(
         test_preds = np.zeros(len(x_test), dtype="float64")
         fold_scores = []
         fold_models = []
-        for fold, (train_idx, valid_idx) in enumerate(kfold.split(x), 1):
+        for fold, (train_idx, valid_idx) in enumerate(splitter.split(x), 1):
             pred, test_pred, model_state = fit_predict_ridge(
                 x[train_idx], y[train_idx], x[valid_idx], x_test, alpha
             )
@@ -395,7 +403,8 @@ def drw_ridge(
             fold_scores.append(score)
             fold_models.append(model_state)
             console.print(f"  alpha={alpha:g} fold={fold}/{folds} Pearson={score:.6f}")
-        oof_score = float(pearsonr(y, oof)[0])
+        scored_mask = oof != 0
+        oof_score = float(pearsonr(y[scored_mask], oof[scored_mask])[0])
         console.print(f"[cyan]alpha={alpha:g} OOF Pearson={oof_score:.6f}[/cyan]")
         if best is None or oof_score > best["score"]:
             best = {
@@ -435,7 +444,8 @@ def drw_ridge(
             "alphas": alpha_values,
             "top_k": top_k,
             "n_features": len(selected),
-            "cv_strategy": "kfold_no_shuffle",
+            "cv_strategy": "time_series_split" if cv == "timeseries" else "kfold_no_shuffle",
+            "cv": cv,
             "folds": folds,
         },
         "runtime_sec": time.time() - started_at,
@@ -460,6 +470,7 @@ def drw_ensemble(
     models: str = typer.Option("v010,v011,v007,v003", "--models", help="Comma-separated model versions"),
     step: int = typer.Option(20, "--step", help="Weight grid denominator, e.g. 20 means 0.05 steps"),
     method: str = typer.Option("grid", "--method", help="Weight search: grid|optimize"),
+    mask_zero_oof: bool = typer.Option(True, "--mask-zero-oof/--no-mask-zero-oof", help="Ignore rows where any model has zero OOF prediction"),
 ):
     """Build a simple OOF-optimized ensemble for DRW models."""
     import itertools
@@ -502,6 +513,20 @@ def drw_ensemble(
         score = json.load(open(score_path)).get("mean_score")
         loaded.append({"version": version, "score": score, "oof": oof, "preds": preds})
 
+    eval_mask = np.ones(len(y), dtype=bool)
+    if mask_zero_oof:
+        for item in loaded:
+            eval_mask &= item["oof"] != 0
+        if not eval_mask.any():
+            console.print("[red]No rows remain after --mask-zero-oof.[/red]")
+            raise typer.Exit(1)
+        if eval_mask.mean() < 1:
+            console.print(
+                f"  using common non-zero OOF rows: {int(eval_mask.sum()):,}/{len(eval_mask):,} "
+                f"({eval_mask.mean():.1%})"
+            )
+
+    y_eval = y[eval_mask]
     console.print("[yellow]Optimizing ensemble weights...[/yellow]")
     best = None
     n = len(loaded)
@@ -519,14 +544,14 @@ def drw_ensemble(
             if sum(raw_weights) == 0:
                 continue
             weights = np.array(raw_weights, dtype=float) / step
-            blended = sum(weights[i] * loaded[i]["oof"] for i in range(n))
-            score = pearsonr(y, blended)[0]
+            blended = sum(weights[i] * loaded[i]["oof"][eval_mask] for i in range(n))
+            score = pearsonr(y_eval, blended)[0]
             if best is None or score > best["score"]:
                 best = {"score": float(score), "weights": weights}
     elif method == "optimize":
-        y_centered = y - y.mean()
+        y_centered = y_eval - y_eval.mean()
         y_norm = np.linalg.norm(y_centered)
-        oof_matrix = np.column_stack([item["oof"].astype("float64") for item in loaded])
+        oof_matrix = np.column_stack([item["oof"][eval_mask].astype("float64") for item in loaded])
 
         def corr(weights: np.ndarray) -> float:
             blended = oof_matrix @ weights
@@ -584,6 +609,8 @@ def drw_ensemble(
         "weights": {loaded[i]["version"]: float(best["weights"][i]) for i in range(n)},
         "metric": "pearson",
         "oof_pearson": best["score"],
+        "oof_mask_rows": int(eval_mask.sum()),
+        "oof_mask_fraction": float(eval_mask.mean()),
         "submission": sub_path.name,
     }
     meta_path.write_text(json.dumps(meta, indent=2))
