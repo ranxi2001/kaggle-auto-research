@@ -487,3 +487,27 @@
   - prediction mean/std: `0.000000 / 0.559251`
   - prediction min/max: `-0.999989 / 0.999991`
 - Decision update: make `sub_anchor_blend_utility_scan.csv` the next-submit candidate. It gives up `0.000464` raw composite versus `sub_anchor_blend_conservative.csv` (`alpha=0.21`) but stays below the failed-direction threshold and closer to the current public-best anchor.
+
+## Weighted Ridge Probe - 2026-06-09
+
+- Tested a recency-weighted closed-form Ridge prototype on the v021-style feature set (`top_k=180` plus public-diverse features).
+- Grid:
+  - decay: `1.0, 0.995, 0.99, 0.985, 0.97`
+  - alpha: `3000, 7500, 30000, 100000`
+  - CV: `TimeSeriesSplit(n_splits=5)`
+- Report: `reports/weighted_ridge_probe.csv`
+- Best result remained the unweighted baseline:
+  - decay: `1.0`
+  - alpha: `3000`
+  - full: `0.143261`
+  - tail20: `0.086090`
+  - tail10: `0.139815`
+  - tail5: `0.176629`
+  - composite: `0.128930`
+- Best weighted run (`decay=0.995`, `alpha=3000`) was slightly worse:
+  - full: `0.143249`
+  - tail20: `0.086057`
+  - tail10: `0.139800`
+  - tail5: `0.176603`
+  - composite: `0.128910`
+- Decision: do not promote recency-weighted Ridge into a DRW CLI command yet. The tested time-decay weighting does not add useful signal and remains below the current next-submit utility candidate (`0.129080` composite).
