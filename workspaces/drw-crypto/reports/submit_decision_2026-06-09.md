@@ -16,7 +16,7 @@
 Submit:
 
 ```powershell
-.\kar.cmd submit drw-crypto --file submissions\sub_calibrated_tail10_refined_tuned.csv
+.\kar.cmd submit drw-crypto --file submissions\sub_calibrated_tail10_batch_tuned.csv
 ```
 
 Dry-run status: valid.
@@ -28,31 +28,31 @@ Do not submit older candidates unless deliberately running an ablation.
 Recommended file:
 
 ```text
-sub_calibrated_tail10_refined_tuned.csv
+sub_calibrated_tail10_batch_tuned.csv
 ```
 
 Weights:
 
 | Model | Weight |
 | --- | ---: |
-| `v032` | `0.536970` |
-| `v028` | `0.223221` |
-| `v010` | `0.158697` |
-| `v017` | `0.047228` |
-| `v029` | `0.020876` |
-| `v023` | `0.013008` |
+| `v032` | `0.543277` |
+| `v028` | `0.228819` |
+| `v010` | `0.159950` |
+| `v017` | `0.032678` |
+| `v023` | `0.021254` |
+| `v029` | `0.014022` |
 
 Diagnostics:
 
 | Metric | Value |
 | --- | ---: |
-| full | `0.135723` |
-| tail20 | `0.124063` |
-| tail10 | `0.117680` |
-| ts_fold5 | `0.119955` |
-| conservative composite | `0.123361` |
-| Spearman vs first submission | `0.907469` |
-| mean rank delta vs first submission | `0.089917` |
+| full | `0.135859` |
+| tail20 | `0.123976` |
+| tail10 | `0.117740` |
+| ts_fold5 | `0.119889` |
+| conservative composite | `0.123363` |
+| Spearman vs first submission | `0.908233` |
+| mean rank delta vs first submission | `0.089543` |
 
 ## Why This Candidate
 

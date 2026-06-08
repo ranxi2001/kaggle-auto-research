@@ -276,3 +276,26 @@
 ## Current Submit Decision Snapshot
 
 - See `reports/submit_decision_2026-06-09.md` for the current second-submit recommendation and exact command.
+
+## Batch Tail10 Core Search - 2026-06-09
+
+- Reworked the fast search into chunked vectorized scoring to avoid the previous all-at-once memory blowup. Report: `reports/tail10_batch_tuning.csv`.
+- New numerically best second-submit candidate: `sub_calibrated_tail10_batch_tuned.csv`
+- Dry-run: valid
+- Weights:
+  - `v032`: `0.543277`
+  - `v028`: `0.228819`
+  - `v010`: `0.159950`
+  - `v017`: `0.032678`
+  - `v023`: `0.021254`
+  - `v029`: `0.014022`
+- Conservative diagnostics:
+  - full: `0.135859`
+  - tail20: `0.123976`
+  - tail10: `0.117740`
+  - ts_fold5: `0.119889`
+  - composite: `0.123363`
+- Difference versus first submitted ensemble:
+  - Spearman: `0.908233`
+  - mean rank delta: `0.089543`
+- Interpretation: this slightly supersedes `sub_calibrated_tail10_refined_tuned.csv` on the composite score. The gain is tiny (`~0.0000015`), so both candidates are effectively equivalent; use `sub_calibrated_tail10_batch_tuned.csv` only to follow the latest recorded optimum.
