@@ -16,7 +16,7 @@
 Submit:
 
 ```powershell
-.\kar.cmd submit drw-crypto --file submissions\sub_calibrated_tail10_batch_tuned.csv
+.\kar.cmd submit drw-crypto --file submissions\sub_calibrated_tail_cli_full.csv
 ```
 
 Dry-run status: valid.
@@ -28,7 +28,7 @@ Do not submit older candidates unless deliberately running an ablation.
 Recommended file:
 
 ```text
-sub_calibrated_tail10_batch_tuned.csv
+sub_calibrated_tail_cli_full.csv
 ```
 
 Weights:
@@ -84,6 +84,12 @@ The calibrated tail ensemble search is available as a CLI command:
 
 ```powershell
 .\kar.cmd drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
+```
+
+The command above reproduces the same weights as the locked recommendation when run as:
+
+```powershell
+.\kar.cmd drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli_full
 ```
 
 Use the explicit submit command above for the current locked recommendation.

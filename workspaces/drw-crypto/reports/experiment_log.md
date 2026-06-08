@@ -299,3 +299,18 @@
   - Spearman: `0.908233`
   - mean rank delta: `0.089543`
 - Interpretation: this slightly supersedes `sub_calibrated_tail10_refined_tuned.csv` on the composite score. The gain is tiny (`~0.0000015`), so both candidates are effectively equivalent; use `sub_calibrated_tail10_batch_tuned.csv` only to follow the latest recorded optimum.
+
+## CLI Reproduction - Tail Ensemble - 2026-06-09
+
+- Ran the new reusable command:
+  `kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli_full`
+- Output: `sub_calibrated_tail_cli_full.csv`
+- Dry-run: valid
+- Result reproduced the batch tuned weights and scores:
+  - composite: `0.123363`
+  - full: `0.135859`
+  - tail20: `0.123976`
+  - tail10: `0.117740`
+  - ts_fold5: `0.119889`
+  - Spearman vs first submission: `0.908233`
+- Decision: use `sub_calibrated_tail_cli_full.csv` as the locked second-submit file because it is directly reproducible from the CLI.
