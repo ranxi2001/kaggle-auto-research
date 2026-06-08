@@ -1,4 +1,4 @@
-# DRW Next Submit Candidate - 2026-06-10
+# DRW Submission Result - 2026-06-10
 
 ## Current State
 
@@ -7,25 +7,24 @@
 - Current best public LB: `0.08199`
 - Failed second submission: `sub_calibrated_tail_cli_full.csv`
 - Failed second public LB: `0.07184`
-- Local budget on 2026-06-09: `2/2` used, `0` remaining
+- Third submission: `sub_anchor_blend_utility_scan.csv`
+- Third public LB: `0.07695`
+- Third private score shown by Kaggle: `0.07766`
+- Local budget after manual override submit: `3/2` used, `0` remaining
 
-## Recommendation
+## Result
 
-When the daily budget resets, submit the utility-selected conservative anchor blend first:
-
-```powershell
-.\kar.cmd submit drw-crypto --file submissions\sub_anchor_blend_utility_scan.csv --force
-```
-
-Use `--force` because the candidate is intentionally not optimizing the original full OOF score. It is anchored against the best real LB submission and selected by a utility score that penalizes similarity to the known failed submission.
-
-The same file is also queued in `.state/submission_budget.json` as of 2026-06-09. After the daily budget resets, this shorter command should submit it:
+The utility-selected conservative anchor blend was submitted with a one-off manual budget override:
 
 ```powershell
-.\kar.cmd submit drw-crypto --flush
+sub_anchor_blend_utility_scan.csv
 ```
 
-Before using `--flush`, run `.\kar.cmd submit drw-crypto --status` and confirm the reserve queue contains only `sub_anchor_blend_utility_scan.csv`.
+It improved over the second tail-calibrated submission (`0.07184` -> `0.07695`) but did not recover the first submission's public LB (`0.08199`). This confirms that anchoring and failed-direction penalties helped, but the blend still moved away from the strongest public leaderboard geometry.
+
+## Next Recommendation
+
+Do not keep pushing local-composite anchor blends unless they preserve more of the first submission. The next useful branch is either an even smaller anchor move or a diagnostic anti-failed extrapolation.
 
 ## Candidate
 

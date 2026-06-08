@@ -548,3 +548,16 @@
   - `sub_anchor_blend_conservative.csv`: valid, composite `0.129544`, Spearman to anchor `0.994191`, Spearman to failed `0.938277`.
   - `sub_anti_failed_rank_beta020.csv`: valid, no OOF score, Spearman to anchor `0.996688`, Spearman to failed `0.871446`.
 - Decision: keep the utility candidate as the next real submit, because it is the highest-scored candidate that stays below the configured failed-direction threshold and has proper metadata.
+
+## Third Submission Result - 2026-06-10
+
+- Submitted `sub_anchor_blend_utility_scan.csv` with a one-off manual budget override.
+- Kaggle ref: `53488239`
+- Public LB: `0.07695`
+- Private score shown by Kaggle: `0.07766`
+- Local utility/composite used for selection: `0.129080`
+- Outcome:
+  - Better than the second tail-calibrated submission (`0.07184` public).
+  - Worse than the first public-best ensemble (`0.08199` public).
+- Interpretation: the risk-aware anchor blend corrected part of the failed second submission's drift, but still gave up too much of the first submission's public-LB geometry. Local composite and utility remain only weakly aligned with the public leaderboard for this competition.
+- Next direction: prioritize candidates with even higher Spearman similarity to the first submission, or test the already-generated anti-failed diagnostic fallback only as an explicit public-feedback probe.
