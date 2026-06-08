@@ -273,3 +273,6 @@
   - Spearman: `0.907469`
   - mean rank delta: `0.089917`
 - Interpretation: this supersedes `sub_calibrated_tail10_expanded_tuned.csv` as the current best second-submit candidate. The gain is small but improves all target recency diagnostics and further increases prediction diversity versus the first submission.
+## Current Submit Decision Snapshot
+
+- See `reports/submit_decision_2026-06-09.md` for the current second-submit recommendation and exact command.
