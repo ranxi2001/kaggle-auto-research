@@ -1,6 +1,47 @@
-# Kaggle Auto Research
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0EA5E9,100:7C3AED&height=180&section=header&text=Kaggle%20Auto%20Research&fontSize=38&fontColor=ffffff&animation=fadeIn&fontAlignY=36&desc=Agent-powered%20Kaggle%20competition%20automation&descSize=16&descAlignY=58" alt="Kaggle Auto Research banner" />
+</p>
 
-Agent-oriented automation framework for Kaggle competitions.
+<p align="center">
+  <strong>Agent-oriented automation framework for Kaggle competitions</strong>
+</p>
+
+<p align="center">
+  <a href="./README.md">简体中文</a>
+  ·
+  <a href="./README-EN.md">English</a>
+  ·
+  <a href="./AGENTS.md">Agent Rules</a>
+  ·
+  <a href="./CONTRIBUTING.md">Contributing</a>
+  ·
+  <a href="./SECURITY.md">Security</a>
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white">
+  <img alt="Kaggle" src="https://img.shields.io/badge/Kaggle-Automation-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white">
+  <img alt="Status" src="https://img.shields.io/badge/Status-Experimental-F59E0B?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge">
+</p>
+
+<p align="center">
+  <img alt="pandas" src="https://img.shields.io/badge/pandas-150458?style=flat-square&logo=pandas&logoColor=white">
+  <img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white">
+  <img alt="scikit-learn" src="https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white">
+  <img alt="LightGBM" src="https://img.shields.io/badge/LightGBM-02569B?style=flat-square">
+  <img alt="XGBoost" src="https://img.shields.io/badge/XGBoost-FF6600?style=flat-square">
+  <img alt="Optuna" src="https://img.shields.io/badge/Optuna-3.4%2B-334155?style=flat-square">
+  <img alt="Typer" src="https://img.shields.io/badge/Typer-CLI-0F766E?style=flat-square">
+  <img alt="pytest" src="https://img.shields.io/badge/pytest-ready-0A9EDC?style=flat-square&logo=pytest&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Quick_Start-0EA5E9?style=for-the-badge" alt="Quick Start"></a>
+  <a href="#common-cli"><img src="https://img.shields.io/badge/Common_CLI-111827?style=for-the-badge" alt="Common CLI"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-7C3AED?style=for-the-badge" alt="Architecture"></a>
+  <a href="#contributing"><img src="https://img.shields.io/badge/Contributing-10B981?style=for-the-badge" alt="Contributing"></a>
+</p>
 
 Kaggle Auto Research turns competition research, data download, EDA, feature generation, model training, iterative improvement, ensembling, submission validation, and leaderboard feedback into reusable CLI stages and versioned workspace artifacts. The goal is not to write one-off competition scripts, but to give humans and coding agents a safe, reproducible way to keep improving results.
 
@@ -16,13 +57,15 @@ Kaggle Auto Research turns competition research, data download, EDA, feature gen
 
 ## Highlights
 
-- **Agent-first workflow**: Research, EDA, Feature, Train, Iteration, and Submit stages communicate through filesystem artifacts.
-- **Workspace isolation**: Every competition lives under `workspaces/<competition>/`.
-- **Config as source of truth**: `config.yaml` stores data paths, target columns, submission format, metrics, CV strategy, models, and submission budget.
-- **Versioned artifacts**: Features, models, OOF predictions, test predictions, and submissions are saved by version.
-- **Submission safety**: The default flow generates and dry-run validates submission files; real submissions require explicit control.
-- **Public notebook ingestion**: Public notebooks can be pulled locally; future work will mine feature lists, model params, CV strategy, and ensemble formulas.
-- **Agent tooling roadmap**: See [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md).
+| Capability | Description |
+| --- | --- |
+| <img src="https://img.shields.io/badge/Agent-Workflow-7C3AED?style=flat-square" alt="Agent Workflow"> | Research, EDA, Feature, Train, Iteration, and Submit stages communicate through filesystem artifacts. |
+| <img src="https://img.shields.io/badge/Workspace-Isolation-0EA5E9?style=flat-square" alt="Workspace Isolation"> | Every competition keeps config, data, models, reports, and submissions under `workspaces/<competition>/`. |
+| <img src="https://img.shields.io/badge/Config-Source_of_Truth-10B981?style=flat-square" alt="Config Source of Truth"> | `config.yaml` stores data paths, target columns, submission format, metrics, CV strategy, models, and submission budget. |
+| <img src="https://img.shields.io/badge/Artifacts-Versioned-F59E0B?style=flat-square" alt="Versioned Artifacts"> | Features, models, OOF predictions, test predictions, and submissions are saved by version. |
+| <img src="https://img.shields.io/badge/Submit-Safe_by_Default-EF4444?style=flat-square" alt="Safe Submit"> | The default flow generates and dry-run validates submission files; real submissions require explicit control. |
+| <img src="https://img.shields.io/badge/Notebook-Ingestion-334155?style=flat-square" alt="Notebook Ingestion"> | Public notebooks can be pulled locally; future work will mine feature lists, model params, CV strategy, and ensemble formulas. |
+| <img src="https://img.shields.io/badge/Roadmap-Agent_Tooling-111827?style=flat-square" alt="Agent Tooling Roadmap"> | See [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md) for the Agent tooling roadmap. |
 
 ## Current DRW Crypto Progress
 
@@ -30,11 +73,12 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 
 - Initial auto-feature baseline: CV R2 `-0.002859`
 - Clean feature selection + LightGBM: best single-model Pearson around `0.0724`
-- Pearson OOF grid ensemble: Pearson `0.077989`
-- Current best local submission: `sub_ensemble_v010_v011_v007_v003.csv`
+- Public-notebook-style XGB time-slice: Pearson `0.053338`, but useful as an ensemble-diversity signal
+- Pearson OOF grid ensemble: Pearson `0.087508`
+- Current best local submission: `sub_ensemble_v010_v011_v007_v003_v015.csv`
 - Public leaderboard top is around `0.11 - 0.14`
 
-Conclusion: the toolchain can run end-to-end and improve, but the result is not yet competitive. The next step is to reproduce public-notebook ideas: 25-feature priors, time-decay slices, XGB/LGBM/Ridge blends, and then turn them into reusable recipes.
+Conclusion: the toolchain can run end-to-end and improve, but the result is not yet competitive. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to close the missing high-numbered-feature gap from public notebooks, improve time-slice CV, and turn XGB/LGBM/Ridge blends into reusable recipes.
 
 ## Installation
 

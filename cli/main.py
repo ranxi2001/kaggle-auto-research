@@ -528,6 +528,7 @@ def drw_public(
                 fit_kwargs["eval_set"] = [(X_valid, y_valid)]
             else:
                 fit_kwargs["eval_set"] = [(X_valid.to_numpy(), y_valid)]
+                fit_kwargs["verbose"] = False
                 X_train = X_train.to_numpy()
 
             fitted.fit(X_train, y_train, **fit_kwargs)
