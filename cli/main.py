@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import time
 import zipfile
 from pathlib import Path
 
@@ -28,17 +29,31 @@ app = typer.Typer(
 console = Console()
 
 
+def _run_kaggle(args: list[str], retries: int = 3) -> subprocess.CompletedProcess:
+    """Run Kaggle CLI with small retry budget for flaky network connections."""
+    cmd = [sys.executable, "-m", "kaggle", *args]
+    result = subprocess.CompletedProcess(cmd, 1)
+    for attempt in range(1, retries + 1):
+        result = subprocess.run(cmd)
+        if result.returncode == 0:
+            return result
+        if attempt < retries:
+            console.print(f"[yellow]Kaggle command failed, retrying ({attempt}/{retries})...[/yellow]")
+            time.sleep(2 * attempt)
+    return result
+
+
 @app.command()
 def auth():
     """Log in to Kaggle and show credential status."""
     console.print("[yellow]Opening Kaggle login...[/yellow]")
-    result = subprocess.run([sys.executable, "-m", "kaggle", "auth", "login"])
+    result = _run_kaggle(["auth", "login"], retries=1)
     if result.returncode != 0:
         console.print("[red]Kaggle login failed.[/red]")
         raise typer.Exit(result.returncode)
 
     console.print("\n[yellow]Checking Kaggle credentials...[/yellow]")
-    status = subprocess.run([sys.executable, "-m", "kaggle", "config", "view"])
+    status = _run_kaggle(["config", "view"], retries=1)
     if status.returncode == 0:
         console.print("[green]Kaggle auth OK.[/green]")
     else:
@@ -63,10 +78,7 @@ def data(name: str = typer.Argument(..., help="Competition workspace name")):
         console.print(f"[dim]Using existing archive:[/dim] {zip_files[0].name}")
     else:
         console.print(f"[yellow]Downloading data:[/yellow] {slug}")
-        result = subprocess.run([
-            sys.executable, "-m", "kaggle", "competitions", "download",
-            slug, "-p", str(raw_dir),
-        ])
+        result = _run_kaggle(["competitions", "download", slug, "-p", str(raw_dir)])
         if result.returncode != 0:
             console.print("[red]Download failed.[/red]")
             raise typer.Exit(result.returncode)
@@ -85,6 +97,294 @@ def data(name: str = typer.Argument(..., help="Competition workspace name")):
     console.print("[green]Data ready.[/green]")
     for p in files:
         console.print(f"  {p.name} ({p.stat().st_size / 1024 / 1024:.1f} MB)")
+
+
+@app.command()
+def leaderboard(
+    name: str = typer.Argument(..., help="Competition workspace name"),
+    top: bool = typer.Option(False, "--top", help="Show public leaderboard top rows"),
+    page_size: int = typer.Option(20, "--page-size", "-n", help="Rows to request from Kaggle"),
+):
+    """Show Kaggle submissions or public leaderboard for a workspace."""
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    slug = config.competition.name
+
+    if top:
+        console.print(f"[cyan]Leaderboard top:[/cyan] {slug}")
+        result = _run_kaggle([
+            "competitions", "leaderboard", slug,
+            "--show", "--page-size", str(page_size),
+        ])
+    else:
+        console.print(f"[cyan]Your submissions:[/cyan] {slug}")
+        result = _run_kaggle([
+            "competitions", "submissions", slug,
+            "--page-size", str(page_size),
+        ])
+
+    if result.returncode != 0:
+        console.print("[red]Failed to fetch leaderboard/submissions.[/red]")
+        raise typer.Exit(result.returncode)
+
+
+@app.command("drw-clean")
+def drw_clean(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    top_k: int = typer.Option(350, "--top-k", help="Keep top-K features by absolute target correlation"),
+    n_estimators: int = typer.Option(700, "--n-estimators", help="LightGBM estimators per fold"),
+    learning_rate: float = typer.Option(0.025, "--learning-rate", help="LightGBM learning rate"),
+    num_leaves: int = typer.Option(31, "--num-leaves", help="LightGBM num leaves"),
+    min_child_samples: int = typer.Option(400, "--min-child-samples", help="LightGBM min child samples"),
+    reg_alpha: float = typer.Option(2.0, "--reg-alpha", help="LightGBM L1 regularization"),
+    reg_lambda: float = typer.Option(8.0, "--reg-lambda", help="LightGBM L2 regularization"),
+    tail_frac: float = typer.Option(1.0, "--tail-frac", help="Use only the latest fraction of train rows"),
+    corr_threshold: float = typer.Option(0.999, "--corr-threshold", help="Drop feature pairs above this correlation"),
+):
+    """Train a DRW-specific cleaned LightGBM baseline and generate a submission."""
+    import json
+    import gc
+
+    import lightgbm as lgb
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics import r2_score
+    from sklearn.model_selection import TimeSeriesSplit
+
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    train_path = workspace / config.data.train
+    test_path = workspace / config.data.test
+
+    console.print(f"[yellow]Loading raw data:[/yellow] {name}")
+    train = pd.read_parquet(train_path)
+    test = pd.read_parquet(test_path)
+
+    if tail_frac <= 0 or tail_frac > 1:
+        console.print("[red]--tail-frac must be in (0, 1].[/red]")
+        raise typer.Exit(1)
+    if tail_frac < 1:
+        start = int(len(train) * (1 - tail_frac))
+        train = train.iloc[start:].reset_index(drop=True)
+        console.print(f"  using latest {tail_frac:.0%} of train rows: {len(train):,}")
+
+    target_col = config.data.target_column
+    y = train[target_col].astype("float32").to_numpy()
+    feature_cols = [c for c in train.columns if c != target_col]
+
+    console.print(f"  train={train.shape}, test={test.shape}, raw_features={len(feature_cols)}")
+
+    nunique = train[feature_cols].nunique(dropna=False)
+    constant_cols = nunique[nunique <= 1].index.tolist()
+    feature_cols = [c for c in feature_cols if c not in constant_cols]
+    console.print(f"  dropped constant: {len(constant_cols)}")
+
+    console.print("  ranking features by target correlation...")
+    corr_to_target = train[feature_cols].corrwith(train[target_col]).abs()
+    ranked = corr_to_target.replace([np.inf, -np.inf], np.nan).dropna().sort_values(ascending=False)
+    selected = ranked.head(min(top_k, len(ranked))).index.tolist()
+    console.print(f"  selected top target-corr features: {len(selected)}")
+
+    console.print("  dropping near-duplicate correlated features...")
+    sample = train[selected].sample(min(80_000, len(train)), random_state=config.model.seed)
+    corr_matrix = sample.corr().abs()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    corr_drop = [col for col in upper.columns if (upper[col] > corr_threshold).any()]
+    selected = [c for c in selected if c not in corr_drop]
+    console.print(f"  dropped correlated: {len(corr_drop)}, final_features={len(selected)}")
+    del sample, corr_matrix, upper
+    gc.collect()
+
+    X = train[selected].astype("float32")
+    X_test = test[selected].astype("float32")
+
+    params = {
+        "objective": "regression",
+        "metric": "rmse",
+        "learning_rate": learning_rate,
+        "n_estimators": n_estimators,
+        "num_leaves": num_leaves,
+        "max_depth": 5,
+        "min_child_samples": min_child_samples,
+        "subsample": 0.75,
+        "subsample_freq": 1,
+        "colsample_bytree": 0.75,
+        "reg_alpha": reg_alpha,
+            "reg_lambda": reg_lambda,
+            "tail_frac": tail_frac,
+        "random_state": config.model.seed,
+        "verbosity": -1,
+        "n_jobs": -1,
+    }
+
+    tscv = TimeSeriesSplit(n_splits=config.model.cv_folds)
+    oof = np.zeros(len(X), dtype="float32")
+    test_preds = np.zeros(len(X_test), dtype="float32")
+    fold_scores = []
+    models = []
+
+    for fold, (tr_idx, va_idx) in enumerate(tscv.split(X), 1):
+        console.print(f"[yellow]Fold {fold}/{config.model.cv_folds}[/yellow]")
+        model = lgb.LGBMRegressor(**params)
+        model.fit(
+            X.iloc[tr_idx], y[tr_idx],
+            eval_set=[(X.iloc[va_idx], y[va_idx])],
+            callbacks=[lgb.early_stopping(80, verbose=False), lgb.log_evaluation(0)],
+        )
+        pred = model.predict(X.iloc[va_idx])
+        oof[va_idx] = pred
+        score = r2_score(y[va_idx], pred)
+        fold_scores.append(float(score))
+        test_preds += model.predict(X_test).astype("float32") / config.model.cv_folds
+        models.append(model)
+        console.print(f"  R2={score:.6f}, best_iter={getattr(model, 'best_iteration_', None)}")
+
+    mean_score = float(np.mean(fold_scores))
+    std_score = float(np.std(fold_scores))
+    console.print(f"[green]CV R2:[/green] {mean_score:.6f} +/- {std_score:.6f}")
+
+    models_dir = workspace / "models"
+    version = 1
+    while (models_dir / f"v{version:03d}").exists():
+        version += 1
+    model_path = models_dir / f"v{version:03d}"
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    import pickle
+    with open(model_path / "model.pkl", "wb") as f:
+        pickle.dump(models, f)
+    np.save(model_path / "oof_preds.npy", oof)
+    np.save(model_path / "test_preds.npy", test_preds)
+    pd.DataFrame({
+        "feature": selected,
+        "importance": ranked.reindex(selected).fillna(0).values,
+        "target_corr": ranked.reindex(selected).fillna(0).values,
+    }).to_csv(
+        model_path / "importance.csv", index=False
+    )
+    with open(model_path / "cv_scores.json", "w") as f:
+        json.dump({
+            "fold_scores": fold_scores,
+            "mean_score": mean_score,
+            "std_score": std_score,
+            "model_type": "lightgbm_clean",
+            "features": selected,
+            "params": params,
+            "dropped_constant": constant_cols,
+            "dropped_correlated": corr_drop,
+        }, f, indent=2)
+
+    submitter = Submitter(workspace, config)
+    sub_path = submitter.generate_submission(test_preds, model_version=f"v{version:03d}")
+    validation = submitter.validate(sub_path)
+    console.print(f"  Model: {model_path}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
+
+
+@app.command("drw-ensemble")
+def drw_ensemble(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    models: str = typer.Option("v011,v010,v007,v003", "--models", help="Comma-separated model versions"),
+    step: int = typer.Option(20, "--step", help="Weight grid denominator, e.g. 20 means 0.05 steps"),
+):
+    """Build a simple OOF-optimized ensemble for DRW models."""
+    import itertools
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics import r2_score
+
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    versions = [m.strip() for m in models.split(",") if m.strip()]
+    if len(versions) < 2:
+        console.print("[red]Need at least two model versions.[/red]")
+        raise typer.Exit(1)
+
+    y = pd.read_parquet(workspace / config.data.train, columns=[config.data.target_column])[
+        config.data.target_column
+    ].to_numpy()
+
+    loaded = []
+    for version in versions:
+        model_dir = workspace / "models" / version
+        oof_path = model_dir / "oof_preds.npy"
+        pred_path = model_dir / "test_preds.npy"
+        score_path = model_dir / "cv_scores.json"
+        if not (oof_path.exists() and pred_path.exists() and score_path.exists()):
+            console.print(f"[red]Missing artifacts for {version}[/red]")
+            raise typer.Exit(1)
+        oof = np.load(oof_path)
+        preds = np.load(pred_path)
+        if len(oof) != len(y):
+            console.print(f"[red]OOF length mismatch for {version}[/red]")
+            raise typer.Exit(1)
+        score = json.load(open(score_path)).get("mean_score")
+        loaded.append({"version": version, "score": score, "oof": oof, "preds": preds})
+
+    console.print("[yellow]Optimizing ensemble weights...[/yellow]")
+    best = None
+    n = len(loaded)
+
+    def compositions(total: int, parts: int):
+        if parts == 1:
+            yield (total,)
+            return
+        for i in range(total + 1):
+            for rest in compositions(total - i, parts - 1):
+                yield (i, *rest)
+
+    for raw_weights in compositions(step, n):
+        if sum(raw_weights) == 0:
+            continue
+        weights = np.array(raw_weights, dtype=float) / step
+        blended = sum(weights[i] * loaded[i]["oof"] for i in range(n))
+        score = r2_score(y, blended)
+        if best is None or score > best["score"]:
+            best = {"score": float(score), "weights": weights}
+
+    assert best is not None
+    test_preds = sum(best["weights"][i] * loaded[i]["preds"] for i in range(n))
+    model_tag = "_".join(item["version"] for item in loaded)
+    sub_path = workspace / "submissions" / f"sub_ensemble_{model_tag}.csv"
+
+    sample = pd.read_csv(workspace / config.data.sample_submission)
+    sample[sample.columns[1]] = test_preds
+    sample.to_csv(sub_path, index=False)
+
+    meta_path = workspace / "submissions" / f"sub_ensemble_{model_tag}.json"
+    meta = {
+        "models": [{"version": item["version"], "cv_score": item["score"]} for item in loaded],
+        "weights": {loaded[i]["version"]: float(best["weights"][i]) for i in range(n)},
+        "oof_r2": best["score"],
+        "submission": sub_path.name,
+    }
+    meta_path.write_text(json.dumps(meta, indent=2))
+
+    validation = Submitter(workspace, config).validate(sub_path)
+    console.print(f"[green]Ensemble OOF R2:[/green] {best['score']:.6f}")
+    console.print(f"  Weights: {meta['weights']}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
 
 
 @app.command()
