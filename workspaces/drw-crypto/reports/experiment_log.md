@@ -203,3 +203,25 @@
 - Both timed out because each evaluation recomputed full-row rank/correlation diagnostics. No new artifact was produced.
 - Engineering note: future tuning should precompute segment-centered vectors and approximate rank deltas, or optimize on sampled rows before full validation.
 - Decision: keep `sub_calibrated_manual_tail10_boost.csv` as the current best second-submit candidate. Its existing dry-run is valid and its conservative metrics remain the strongest completed evidence.
+
+## Fast Tail10 Weight Tuning - 2026-06-09
+
+- Reimplemented the local weight search with precomputed segment-centered OOF matrices and a reduced 5k search. Report: `reports/tail10_fast_tuning.csv`.
+- New recommended second-submit candidate: `sub_calibrated_tail10_fast_tuned.csv`
+- Dry-run: valid
+- Weights:
+  - `v032`: `0.459974`
+  - `v028`: `0.194797`
+  - `v010`: `0.171337`
+  - `v017`: `0.120635`
+  - `v029`: `0.053257`
+- Conservative diagnostics:
+  - full: `0.136446`
+  - tail20: `0.123829`
+  - tail10: `0.117130`
+  - ts_fold5: `0.119877`
+  - composite: `0.123294`
+- Difference versus first submitted ensemble:
+  - Spearman: `0.913948`
+  - mean rank delta: `0.086738`
+- Interpretation: this supersedes `sub_calibrated_manual_tail10_boost.csv` as the current best second-submit candidate. It improves composite (`0.123294` vs `0.123021`) and prediction diversity while keeping the same conservative objective.
