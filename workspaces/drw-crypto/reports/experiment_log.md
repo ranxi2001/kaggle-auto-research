@@ -400,3 +400,40 @@
   - Spearman to failed tail submission: `0.934960`
   - mean rank delta to anchor: `0.020516`
 - Decision: do not replace `sub_anchor_blend_conservative.csv` as the next-submit candidate. The v033 blend is more conservative but has lower composite (`0.123785` vs `0.125011`) and does not add enough evidence to justify using the next Kaggle submission on it.
+
+## Anchor Blend Metadata Weight Fix - 2026-06-09
+
+- Fixed `kar drw-anchor-blend` to reconstruct the anchor OOF from the anchor submission's adjacent JSON metadata when available.
+- Previous scans used equal-weight `--anchor-models` as the local OOF anchor even though the submitted rank ensemble had optimized weights:
+  - `v010`: `0.178172`
+  - `v017`: `0.162450`
+  - `v019`: `0.143619`
+  - `v021`: `0.453657`
+  - `v023`: `0.062102`
+- Re-generated the anchor blend reports and submissions:
+  - `sub_anchor_blend_safe.csv`
+    - group: `v032`
+    - alpha: `0.21`
+    - corrected composite: `0.129910`
+    - Spearman to best anchor: `0.991515`
+    - Spearman to failed tail submission: `0.948163`
+    - mean rank delta to anchor: `0.028320`
+  - `sub_anchor_blend_conservative.csv`
+    - group: `v016+v017+v031+v032`
+    - alpha: `0.21`
+    - corrected composite: `0.129544`
+    - full: `0.140456`
+    - tail20 / ts_fold5: `0.115519`
+    - tail10: `0.109920`
+    - tail5: `0.151956`
+    - Spearman to best anchor: `0.994191`
+    - Spearman to failed tail submission: `0.938277`
+    - mean rank delta to anchor: `0.023247`
+  - `sub_anchor_blend_v033.csv`
+    - group: `v016+v017+v031+v032+v033`
+    - alpha: `0.21`
+    - corrected composite: `0.128466`
+    - Spearman to best anchor: `0.995527`
+    - Spearman to failed tail submission: `0.934960`
+    - mean rank delta to anchor: `0.020516`
+- Decision remains unchanged: submit `sub_anchor_blend_conservative.csv` first after budget reset. The corrected score is stronger than previously recorded while preserving the more conservative move away from the public-best anchor.

@@ -1000,6 +1000,7 @@ def drw_anchor_blend(
     config = load_config(workspace)
     submissions_dir = workspace / "submissions"
     anchor_path = submissions_dir / anchor_file
+    anchor_meta_path = anchor_path.with_suffix(".json")
     failed_path = submissions_dir / failed_file
     if not anchor_path.exists():
         console.print(f"[red]Missing anchor submission:[/red] {anchor_path}")
@@ -1040,6 +1041,36 @@ def drw_anchor_blend(
             parsed[group_name.strip()] = versions
         return parsed
 
+    def load_anchor_spec() -> tuple[list[str], dict[str, float], str]:
+        if anchor_meta_path.exists():
+            try:
+                meta = json.loads(anchor_meta_path.read_text(encoding="utf-8"))
+                meta_models = []
+                for item in meta.get("models", []):
+                    if isinstance(item, dict) and item.get("version"):
+                        meta_models.append(str(item["version"]))
+                    elif isinstance(item, str):
+                        meta_models.append(item)
+                meta_weights = meta.get("weights") if isinstance(meta.get("weights"), dict) else {}
+                weights = {
+                    version: float(meta_weights[version])
+                    for version in meta_models
+                    if version in meta_weights and float(meta_weights[version]) > 1e-12
+                }
+                if weights:
+                    total = sum(weights.values())
+                    weights = {version: weight / total for version, weight in weights.items()}
+                    return list(weights.keys()), weights, f"metadata:{anchor_meta_path.name}"
+            except Exception as exc:
+                console.print(f"[yellow]Could not read anchor metadata, falling back to --anchor-models: {exc}[/yellow]")
+
+        versions = parse_versions(anchor_models)
+        if not versions:
+            console.print("[red]Need at least one anchor model.[/red]")
+            raise typer.Exit(1)
+        weight = 1.0 / len(versions)
+        return versions, {version: weight for version in versions}, "equal_weight_cli"
+
     y = pd.read_parquet(workspace / config.data.train, columns=[config.data.target_column])[
         config.data.target_column
     ].to_numpy(dtype="float32")
@@ -1056,11 +1087,12 @@ def drw_anchor_blend(
             cache[version] = load_rank_pair(version)
         return cache[version]
 
+    anchor_versions, anchor_weights, anchor_source = load_anchor_spec()
     anchor_oofs = []
-    for version in parse_versions(anchor_models):
+    for version in anchor_versions:
         oof, _ = cached(version)
-        anchor_oofs.append(oof)
-    anchor_oof = np.mean(anchor_oofs, axis=0).astype("float32")
+        anchor_oofs.append(oof * anchor_weights[version])
+    anchor_oof = np.sum(anchor_oofs, axis=0).astype("float32")
 
     group_specs = parse_groups(groups)
     alphas = [float(item.strip()) for item in alpha_grid.split(",") if item.strip()]
@@ -1143,6 +1175,8 @@ def drw_anchor_blend(
     meta = {
         "candidate": output_tag,
         "anchor_file": anchor_file,
+        "anchor_source": anchor_source,
+        "anchor_weights": anchor_weights,
         "failed_reference_file": failed_file if failed_path.exists() else None,
         "group": best["group"],
         "models": best_versions,

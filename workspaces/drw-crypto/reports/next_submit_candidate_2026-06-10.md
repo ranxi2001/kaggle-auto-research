@@ -38,13 +38,14 @@ Blend:
 | Field | Value |
 | --- | ---: |
 | anchor | first submitted public-best ensemble |
+| anchor OOF source | metadata-weighted rank ensemble |
 | group | `v016+v017+v031+v032` |
 | alpha | `0.21` |
-| composite | `0.125011` |
-| full | `0.138919` |
-| tail20 / ts_fold5 | `0.109733` |
-| tail10 | `0.100740` |
-| tail5 | `0.144663` |
+| composite | `0.129544` |
+| full | `0.140456` |
+| tail20 / ts_fold5 | `0.115519` |
+| tail10 | `0.109920` |
+| tail5 | `0.151956` |
 | Spearman to best anchor | `0.994191` |
 | Spearman to failed tail submission | `0.938277` |
 | mean rank delta to anchor | `0.023247` |
@@ -64,12 +65,12 @@ Audit:
 
 ## Alternative
 
-`sub_anchor_blend_safe.csv` has slightly higher local composite (`0.125443`) but moves more toward the failed tail direction:
+`sub_anchor_blend_safe.csv` has slightly higher local composite (`0.129910`) but moves more toward the failed tail direction:
 
 | File | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor |
 | --- | ---: | ---: | ---: | ---: |
-| `sub_anchor_blend_safe.csv` | `0.125443` | `0.991515` | `0.948163` | `0.028320` |
-| `sub_anchor_blend_conservative.csv` | `0.125011` | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anchor_blend_safe.csv` | `0.129910` | `0.991515` | `0.948163` | `0.028320` |
+| `sub_anchor_blend_conservative.csv` | `0.129544` | `0.994191` | `0.938277` | `0.023247` |
 
 Prefer the conservative candidate unless deliberately testing the stronger `v032` tail signal.
 
@@ -79,10 +80,10 @@ Prefer the conservative candidate unless deliberately testing the stronger `v032
 
 | File | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor |
 | --- | ---: | ---: | ---: | ---: |
-| `sub_anchor_blend_conservative.csv` | `0.125011` | `0.994191` | `0.938277` | `0.023247` |
-| `sub_anchor_blend_v033.csv` | `0.123785` | `0.995527` | `0.934960` | `0.020516` |
+| `sub_anchor_blend_conservative.csv` | `0.129544` | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anchor_blend_v033.csv` | `0.128466` | `0.995527` | `0.934960` | `0.020516` |
 
-The v033 blend is slightly closer to the best anchor, but it gives up too much local composite. Keep it as a fallback only after the conservative candidate has been tested.
+The v033 blend is slightly closer to the best anchor, but it gives up local composite. Keep it as a fallback only after the conservative candidate has been tested.
 
 ## After Submission
 
