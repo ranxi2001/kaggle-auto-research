@@ -471,6 +471,7 @@ def drw_ensemble(
     step: int = typer.Option(20, "--step", help="Weight grid denominator, e.g. 20 means 0.05 steps"),
     method: str = typer.Option("grid", "--method", help="Weight search: grid|optimize"),
     mask_zero_oof: bool = typer.Option(True, "--mask-zero-oof/--no-mask-zero-oof", help="Ignore rows where any model has zero OOF prediction"),
+    transform: str = typer.Option("raw", "--transform", help="Prediction transform: raw|zscore|ranknorm|clip001"),
 ):
     """Build a simple OOF-optimized ensemble for DRW models."""
     import itertools
@@ -480,6 +481,7 @@ def drw_ensemble(
     import pandas as pd
     from scipy.optimize import minimize
     from scipy.stats import pearsonr
+    from scipy.stats import norm, rankdata
 
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
@@ -527,6 +529,44 @@ def drw_ensemble(
             )
 
     y_eval = y[eval_mask]
+
+    def rank_normalize_pair(oof_values: np.ndarray, pred_values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        valid = oof_values[eval_mask]
+        ranks = rankdata(valid, method="average")
+        probs = (ranks - 0.5) / len(valid)
+        transformed_oof = np.zeros_like(oof_values, dtype="float64")
+        transformed_oof[eval_mask] = norm.ppf(probs)
+
+        sorted_valid = np.sort(valid)
+        if (~eval_mask).any():
+            idx = np.searchsorted(sorted_valid, oof_values[~eval_mask], side="left")
+            probs_missing = np.clip((idx + 0.5) / len(sorted_valid), 1e-6, 1 - 1e-6)
+            transformed_oof[~eval_mask] = norm.ppf(probs_missing)
+
+        pred_idx = np.searchsorted(sorted_valid, pred_values, side="left")
+        pred_probs = np.clip((pred_idx + 0.5) / len(sorted_valid), 1e-6, 1 - 1e-6)
+        return transformed_oof, norm.ppf(pred_probs)
+
+    if transform != "raw":
+        for item in loaded:
+            oof_values = item["oof"].astype("float64")
+            pred_values = item["preds"].astype("float64")
+            if transform == "zscore":
+                mu = oof_values[eval_mask].mean()
+                sigma = oof_values[eval_mask].std()
+                sigma = sigma if sigma else 1.0
+                item["oof"] = (oof_values - mu) / sigma
+                item["preds"] = (pred_values - mu) / sigma
+            elif transform == "ranknorm":
+                item["oof"], item["preds"] = rank_normalize_pair(oof_values, pred_values)
+            elif transform == "clip001":
+                lo, hi = np.quantile(oof_values[eval_mask], [0.001, 0.999])
+                item["oof"] = np.clip(oof_values, lo, hi)
+                item["preds"] = np.clip(pred_values, lo, hi)
+            else:
+                console.print("[red]--transform must be raw, zscore, ranknorm, or clip001.[/red]")
+                raise typer.Exit(1)
+
     console.print("[yellow]Optimizing ensemble weights...[/yellow]")
     best = None
     n = len(loaded)
@@ -597,17 +637,19 @@ def drw_ensemble(
     assert best is not None
     test_preds = sum(best["weights"][i] * loaded[i]["preds"] for i in range(n))
     model_tag = "_".join(item["version"] for item in loaded)
-    sub_path = workspace / "submissions" / f"sub_ensemble_{model_tag}.csv"
+    transform_tag = "" if transform == "raw" else f"_{transform}"
+    sub_path = workspace / "submissions" / f"sub_ensemble{transform_tag}_{model_tag}.csv"
 
     sample = pd.read_csv(workspace / config.data.sample_submission)
     sample[sample.columns[1]] = test_preds
     sample.to_csv(sub_path, index=False)
 
-    meta_path = workspace / "submissions" / f"sub_ensemble_{model_tag}.json"
+    meta_path = workspace / "submissions" / f"sub_ensemble{transform_tag}_{model_tag}.json"
     meta = {
         "models": [{"version": item["version"], "cv_score": item["score"]} for item in loaded],
         "weights": {loaded[i]["version"]: float(best["weights"][i]) for i in range(n)},
         "metric": "pearson",
+        "transform": transform,
         "oof_pearson": best["score"],
         "oof_mask_rows": int(eval_mask.sum()),
         "oof_mask_fraction": float(eval_mask.mean()),
