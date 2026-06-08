@@ -52,9 +52,10 @@ Model geometry audit added one more exploratory candidate:
 | Candidate | Role | Local composite | Anchor Spearman | Max failed Spearman | Rank delta | Decision |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | `sub_anchor_blend_micro_scan.csv` | conservative next submit | `0.128042` | `0.998170` | `0.999508` | `0.013142` | submit first if optimizing for safety |
+| `sub_low_failed_pool_random_best.csv` | exploratory random low-failed pool | `0.128656` | `0.929671` | `0.954688` | `0.079369` | backup exploration; valid but riskier |
 | `sub_low_failed_pool_grid.csv` | exploratory low-failed pool | `0.128676` | `0.911003` | `0.939423` | `0.090004` | submit only if deliberately testing a larger geometry move |
 
-`sub_low_failed_pool_grid.csv` blends `v016`, `v017`, and `v021` equally. It has better local composite than the micro anchor blend and is much less tied to the failed utility submission, but it moves far from the first public-best anchor. Treat it as an exploration branch, not the default next submission.
+`sub_low_failed_pool_random_best.csv` came from the random low-failed model-pool report and has the best pool utility (`0.132554`), but it is still much farther from the first public-best anchor than the queued micro blend. `sub_low_failed_pool_grid.csv` is a simpler equal-weight exploration branch. Treat both as exploration branches, not the default next submission.
 
 Queue status: `sub_anchor_blend_micro_scan.csv` is reserved in `.state/submission_budget.json` with CV/utility `0.128042`. After the daily budget resets, run:
 
@@ -64,7 +65,7 @@ Queue status: `sub_anchor_blend_micro_scan.csv` is reserved in `.state/submissio
 
 Before flushing, verify with `.\kar.cmd submit drw-crypto --status` that the reserve queue contains only `sub_anchor_blend_micro_scan.csv`.
 
-## Candidate
+## Third Submission Details
 
 File:
 
@@ -109,7 +110,7 @@ Audit:
 | prediction std | `0.559251` |
 | prediction min/max | `-0.999989 / 0.999991` |
 
-## Alternative
+## Earlier Alternatives
 
 `sub_anchor_blend_conservative.csv` has higher raw local composite (`0.129544`) but crosses the failed-direction threshold used by the utility selector:
 
@@ -119,7 +120,7 @@ Audit:
 | `sub_anchor_blend_conservative.csv` | `0.129544` | `0.994191` | `0.938277` | `0.023247` |
 | `sub_anchor_blend_safe.csv` | `0.129910` | `0.991515` | `0.948163` | `0.028320` |
 
-Prefer the utility candidate for the next submission because the first two real submissions showed that local composite alone overstates riskier moves. Use `sub_anchor_blend_conservative.csv` only if deliberately accepting a higher failed-direction similarity for more local score.
+These candidates were evaluated before the third real submission. The utility candidate has already been submitted and scored `0.07695` public LB, so this section is retained for traceability rather than as a current recommendation.
 
 ## Rejected Follow-up
 
@@ -138,13 +139,13 @@ The v033 blend is slightly closer to the best anchor, but it gives up local comp
 
 | Candidate | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor | Decision |
 | --- | ---: | ---: | ---: | ---: | --- |
-| conservative `alpha=0.18` | `0.129080` | `0.995783` | `0.934484` | `0.019854` | submit first |
+| conservative `alpha=0.18` | `0.129080` | `0.995783` | `0.934484` | `0.019854` | already submitted |
 | conservative `alpha=0.21` | `0.129544` | `0.994191` | `0.938277` | `0.023247` | higher composite, more failed-direction risk |
 | conservative `alpha=0.22` | `0.129691` | `0.993600` | `0.939500` | `0.024383` | too little gain for more drift |
 | balanced_no_v032 `alpha=0.24` | `0.126893` | `0.997147` | `0.913455` | `0.016538` | safer but too weak |
 | low_failed `alpha=0.24` | `0.125755` | `0.998162` | `0.905323` | `0.013302` | safer but too weak |
 
-The lower-failed-direction groups are useful diagnostics, but their local composite drop is too large for the next submission. Keep the existing conservative candidate.
+The lower-failed-direction groups are useful diagnostics. Post-third-submission analysis now favors `sub_anchor_blend_micro_scan.csv` as the queued conservative candidate.
 
 ## Diagnostic Fallback
 
@@ -158,17 +159,17 @@ It is a diagnostic fallback, not the first submission choice, because it has no 
 
 | File | Spearman to best anchor | Spearman to failed tail | Spearman to utility candidate | Rank delta to anchor | Decision |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `sub_anchor_blend_utility_scan.csv` | `0.995783` | `0.934484` | `1.000000` | `0.019854` | submit first |
+| `sub_anchor_blend_utility_scan.csv` | `0.995783` | `0.934484` | `1.000000` | `0.019854` | already submitted |
 | `sub_anti_failed_rank_beta020.csv` | `0.996688` | `0.871446` | `0.986599` | `0.017765` | diagnostic fallback only |
 
-If the utility candidate does not improve LB, this anti-failed candidate can test whether the failed second submission direction is actively harmful. Do not submit it before the utility candidate.
+The anti-failed candidates can test whether the failed second submission direction is actively harmful, but they remain diagnostics because they have no OOF score.
 
 ## Pre-submit Comparison
 
 Run this before the next real submission to verify the candidate set:
 
 ```powershell
-.\kar.cmd drw-compare-submissions drw-crypto --files sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv,sub_calibrated_tail_cli_full.csv,sub_anchor_blend_utility_scan.csv,sub_anchor_blend_conservative.csv,sub_anti_failed_rank_beta020.csv --output-tag next_submit_compare
+.\kar.cmd drw-score-candidates drw-crypto --files sub_anchor_blend_micro_scan.csv,sub_low_failed_pool_random_best.csv,sub_low_failed_pool_grid.csv,sub_anti_failed_rank_beta100.csv --output-tag next_with_random_pool_score
 ```
 
 Current comparison output:

@@ -644,6 +644,26 @@
   - Keep `sub_anchor_blend_micro_scan.csv` as the conservative next submission.
   - Keep `sub_low_failed_pool_grid.csv` as an exploratory candidate if we decide the next Kaggle budget should test a larger, lower-failed geometry move.
 
+## Random Low-Failed Pool Candidate - 2026-06-10
+
+- Recovered the interrupted random low-failed pool report: `reports/low_failed_pool_search.csv`.
+- Generated `sub_low_failed_pool_random_best.csv` from the top row.
+- Candidate weights:
+  - `v016`: `0.123301`
+  - `v017`: `0.513879`
+  - `v021`: `0.299304`
+  - `v023`: `0.033875`
+  - `v025`: `0.029641`
+- Scores:
+  - composite: `0.128656`
+  - utility: `0.132554`
+  - Spearman to first anchor: `0.929671`
+  - max Spearman to failed submissions: `0.954688`
+  - rank delta to anchor: `0.079369`
+- Dry-run status: valid.
+- Geometry comparison report: `reports/next_with_random_pool_score.csv`
+- Decision: keep `sub_anchor_blend_micro_scan.csv` queued as the conservative next submission. Use `sub_low_failed_pool_random_best.csv` only if deliberately spending a future submission on a larger exploration move.
+
 ## Next Candidate Queue - 2026-06-10
 
 - Fixed `kar submit --file` metadata score parsing to prefer `scores.utility`, then `scores.composite`, then legacy top-level score fields.
