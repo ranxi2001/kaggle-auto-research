@@ -1,4 +1,4 @@
-# DRW Next Submit Plan
+# DRW Submit Status
 
 ## Current Best
 
@@ -9,39 +9,33 @@
 | Best public LB | `0.08199` |
 | Private score shown | `0.08268` |
 
-## Queued Submission
+## Latest Submission
 
 | Field | Value |
 | --- | --- |
 | File | `sub_anchor_blend_micro_scan.csv` |
 | CV / utility | `0.128042` |
-| Reserved date | `2026-06-09` |
-| Reason | Conservative model-backed move; highest geometry score among current unsubmitted candidates and already in reserve queue. |
+| Kaggle ref | `53488725` |
+| Public LB | `0.07720` |
+| Private score shown | `0.07698` |
+| Result | Did not beat current best public LB `0.08199`. |
 
-Before submitting, run:
+## Queue Status
 
-```powershell
-.\kar.cmd submit drw-crypto --status
-```
-
-Confirm the reserve queue contains only `sub_anchor_blend_micro_scan.csv`.
-
-After the daily budget resets, submit with:
-
-```powershell
-.\kar.cmd submit drw-crypto --flush
-```
+- Local reserve queue is empty.
+- Do not re-submit `sub_anchor_blend_micro_scan.csv`.
+- Treat this result as another failed-direction reference for the next candidate scan.
 
 ## Candidate Ranking
 
 | Candidate | Valid | Local score | Score source | Anchor Spearman | Max failed Spearman | Rank delta | Geometry score | Role |
 | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- |
-| `sub_anchor_blend_micro_scan.csv` | yes | `0.128042` | `scores.utility` | `0.998170` | `0.999508` | `0.013142` | `0.664044` | Conservative next submit |
+| `sub_anchor_blend_micro_scan.csv` | yes | `0.128042` | `scores.utility` | `0.998170` | `0.999508` | `0.013142` | `0.664044` | Submitted; failed to beat best |
 | `sub_anti_failed_rank_beta100.csv` | yes |  |  | `0.999154` | `0.991965` | `0.008920` | `0.650248` | Diagnostic public-feedback probe |
 | `sub_low_failed_pool_random_best.csv` | yes | `0.132554` | `scores.utility` | `0.929671` | `0.954688` | `0.079369` | `0.646105` | Exploratory model-backed candidate |
 | `sub_low_failed_pool_grid.csv` | yes | `0.130378` | `scores.utility` | `0.911003` | `0.939423` | `0.090004` | `0.631737` | Larger geometry exploration |
 
-## Post-Submit
+## Next Work
 
 Run:
 
@@ -50,10 +44,10 @@ Run:
 .\kar.cmd sync-lb drw-crypto
 ```
 
-Then update `reports/experiment_log.md`, `reports/lb_sync.csv`, and the next-submit plan with the new public LB result.
+Then rebuild candidate scoring with `sub_anchor_blend_micro_scan.csv` included in the failed reference set before spending another submission.
 
 ## Decision Notes
 
-- Do not submit exploratory fallbacks before the queued micro candidate unless explicitly choosing exploration.
-- If the queued candidate does not beat public LB `0.08199`, keep the first submission as best and add the new result to failed-direction references.
+- Keep the first submission as best until a candidate beats public LB `0.08199`.
+- Do not submit exploratory fallbacks without a fresh geometry scan that includes all failed submissions.
 - The ignored local `reports/next_submit_plan.json` mirrors this plan for local automation, but the Markdown file is the tracked source for handoff.

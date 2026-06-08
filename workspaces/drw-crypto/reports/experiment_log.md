@@ -715,3 +715,12 @@
 - Added `--json-output` to `kar drw-score-candidates`.
 - The JSON report replaces missing numeric values with `null` and writes with `allow_nan=False`, so strict JSON parsers can consume it safely.
 - Smoke-tested with `json_output_smoke`; verified `sub_anti_failed_rank_beta100.csv` has `local_score: null` instead of non-standard `NaN`.
+
+## Fourth Submission - 2026-06-10
+
+- Submitted `sub_anchor_blend_micro_scan.csv` with message `Queued micro scan candidate CV=0.128042`.
+- Kaggle submission ref: `53488725`.
+- Public LB: `0.07720`.
+- Private score shown by Kaggle: `0.07698`.
+- Result: did not beat current best public LB `0.08199` from `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`.
+- Local reserve queue is now empty.
