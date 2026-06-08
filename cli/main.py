@@ -2249,10 +2249,11 @@ def submit(
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))
                 scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
                 cv_score = (
-                    meta.get("oof_pearson")
+                    scores.get("utility")
+                    or scores.get("composite")
+                    or meta.get("oof_pearson")
                     or meta.get("mean_score")
                     or meta.get("composite_score")
-                    or scores.get("composite")
                 )
                 versions = []
                 for item in meta.get("models", []):

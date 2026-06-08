@@ -643,3 +643,15 @@
 - Decision:
   - Keep `sub_anchor_blend_micro_scan.csv` as the conservative next submission.
   - Keep `sub_low_failed_pool_grid.csv` as an exploratory candidate if we decide the next Kaggle budget should test a larger, lower-failed geometry move.
+
+## Next Candidate Queue - 2026-06-10
+
+- Fixed `kar submit --file` metadata score parsing to prefer `scores.utility`, then `scores.composite`, then legacy top-level score fields.
+- Queued `sub_anchor_blend_micro_scan.csv` with:
+  `kar submit drw-crypto --file submissions\sub_anchor_blend_micro_scan.csv --force`
+- Because local budget was already exhausted (`3/2`), the command only validated and reserved the file; it did not submit to Kaggle.
+- Queue status:
+  - file: `sub_anchor_blend_micro_scan.csv`
+  - CV/utility: `0.128042`
+  - reserve queue length: `1`
+- Next real-submit command after budget reset: `kar submit drw-crypto --flush`.

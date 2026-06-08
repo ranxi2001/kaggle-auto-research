@@ -56,6 +56,14 @@ Model geometry audit added one more exploratory candidate:
 
 `sub_low_failed_pool_grid.csv` blends `v016`, `v017`, and `v021` equally. It has better local composite than the micro anchor blend and is much less tied to the failed utility submission, but it moves far from the first public-best anchor. Treat it as an exploration branch, not the default next submission.
 
+Queue status: `sub_anchor_blend_micro_scan.csv` is reserved in `.state/submission_budget.json` with CV/utility `0.128042`. After the daily budget resets, run:
+
+```powershell
+.\kar.cmd submit drw-crypto --flush
+```
+
+Before flushing, verify with `.\kar.cmd submit drw-crypto --status` that the reserve queue contains only `sub_anchor_blend_micro_scan.csv`.
+
 ## Candidate
 
 File:
