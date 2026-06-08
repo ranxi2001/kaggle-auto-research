@@ -695,3 +695,4 @@
 - Updated `SubmissionBudget.reserve()` to normalize submission paths and update an existing reserve entry for the same file instead of appending duplicates.
 - Re-ran `kar submit drw-crypto --file submissions\sub_anchor_blend_micro_scan.csv --force` while budget was exhausted.
 - Verified reserve queue length remained `1` and still points to `sub_anchor_blend_micro_scan.csv` with CV/utility `0.128042`.
+- Added `tests/test_submission_budget.py` coverage for reserve de-duplication and distinct queued paths.
