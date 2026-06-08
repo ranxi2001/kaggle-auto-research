@@ -47,6 +47,18 @@ Kaggle Auto Research turns competition research, data download, EDA, feature gen
 
 > This project is experimental. It is designed for research, prototyping, and internal competition workflows. Real Kaggle submissions are not executed automatically by default.
 
+## Project Positioning
+
+This project focuses on the engineering problems that make real agent-driven Kaggle work fragile:
+
+- Short commands hide virtualenv and Kaggle CLI details, for example `kar auth` and `kar data drw-crypto`.
+- Workspaces isolate each competition's config, data, models, submissions, and experiment logs.
+- Versioned artifacts preserve models, OOF predictions, test predictions, and submission files.
+- Submission budgets and dry-run validation protect scarce Kaggle daily submissions.
+- Public notebooks, feature selection, CV, metrics, ensembling, and leaderboard feedback are meant to become reusable tools instead of one-off scripts.
+
+At this stage, Kaggle Auto Research is a runnable open-source research toolkit, not a polished AutoML product. Contributions should prioritize agent operability, reproducibility, and safety boundaries.
+
 ## Project Status
 
 - Current version: `0.1.0`
@@ -54,6 +66,19 @@ Kaggle Auto Research turns competition research, data download, EDA, feature gen
 - Main use cases: Kaggle tabular / time-series / low-signal competition automation
 - Default behavior: generate, validate, and log locally; never submit by default
 - Open-source entrypoints: [README.md](README.md), [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md)
+
+## Maturity
+
+| Module | Status | Notes |
+| --- | --- | --- |
+| Workspace / config | Usable | Supports multiple competition directories, templates, and basic config. |
+| Kaggle OAuth / data / leaderboard | Usable | `kar auth`, `kar data`, and `kar leaderboard` work directly. |
+| Baseline pipeline | Usable but early | Generic tabular flow runs; hard competitions still need recipes. |
+| DRW Crypto recipe | In active validation | Strong local OOF exists, but real LB calibration is still needed. |
+| Submit safety | Usable | Supports dry-run, budget status, and submission history. |
+| Experiment registry | Planned | Needs immutable run IDs, params, commands, data fingerprints, and runtime metadata. |
+| Notebook mining | Planned | Public notebook ideas can be absorbed manually; structured mining is not built yet. |
+| JSON output | Planned | Agent parsing still needs stable `--json` output. |
 
 ## Highlights
 
@@ -80,6 +105,23 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 - Public leaderboard top is around `0.11 - 0.14`
 
 Conclusion: the toolchain can run end-to-end and improve; the current local OOF score is now near the strong public-leaderboard range. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to use a small number of real submissions to validate CV/LB consistency and keep turning Ridge/XGB/LGBM blends into reusable recipes.
+
+## Tooling Gaps Exposed By The DRW Run
+
+The recent DRW Crypto work showed that model code was not the main bottleneck. The missing infrastructure was:
+
+| Gap | Why it matters | Planned tool |
+| --- | --- | --- |
+| schema/config inspection | DRW's real target column is `label`, so templates cannot be trusted blindly. | `kar inspect <workspace> --fix-config` |
+| metric contract | RMSE, R2, and Pearson confusion can mislead low-signal search. | `MetricSpec` + trainer validation |
+| experiment registry | Comparing runs currently requires scanning `models/vNNN` and metadata files. | `kar experiments` / immutable run registry |
+| submission metadata | Manual file submissions still need CV, model versions, and ensemble weights. | normalized submission `.json` files |
+| LB sync | Kaggle scores should be written back into local history after submission. | `kar sync-lb <workspace>` |
+| notebook miner | Public feature lists, CV schemes, and ensembles should become structured ideas. | `kar notebooks mine` |
+| recipe system | Commands like `drw-ridge` should graduate from hardcoded scripts into templates. | `kar run --template crypto/low_signal_feature_select` |
+| agent-friendly output | Long tables and styled output are not stable machine interfaces. | global `--json` + stable exit codes |
+
+See [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md) for the full roadmap.
 
 ## Installation
 
@@ -171,6 +213,8 @@ kar submit <name> --history
 kar submit <name> --dry-run -f submissions/sub_001.csv
 kar submit <name> --flush
 ```
+
+Note: `kar.cmd` is a short Windows launcher at the repository root, so users do not need to type `.\.venv\Scripts\kar.exe`. After editable installation, `kar` also works directly.
 
 DRW Crypto research helpers:
 

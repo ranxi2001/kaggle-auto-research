@@ -103,8 +103,8 @@ Agent value:
 ### 6. Ensemble Builder With OOF Contracts
 
 Current state:
-- Manual OOF ensembling improved DRW from `0.003998` to `0.005707`.
-- The built-in ensemble path is not yet aligned with maximize/minimize and artifact metadata.
+- OOF ensembling improved DRW from weak generic baselines to a rank-normalized common-mask Pearson of `0.149746`.
+- The DRW-specific `drw-ensemble` path now supports optimized nonnegative weights and transforms, but the generic `kar ensemble` path still needs the same artifact and metric contracts.
 
 Needed:
 - `kar ensemble <workspace> --models v011,v010,v007 --metric pearson`.
@@ -220,17 +220,19 @@ The JSON metadata should include:
 
 ## Immediate Next Steps
 
-1. Extract `drw-clean` into a reusable template under `src/kaggle_auto/templates/` or `src/kaggle_auto/recipes/`.
-2. Add `kar inspect` and make pipeline refuse to train when config schema does not match data.
-3. Add an experiment registry and atomic run/submission ID allocator.
-4. Upgrade `kar ensemble` to reproduce the DRW OOF grid blend.
-5. Add notebook mining for public feature lists and params.
-6. Add JSON output mode for key commands.
+1. Add `kar inspect` and make pipeline refuse to train when config schema does not match data.
+2. Add an experiment registry and atomic run/submission ID allocator.
+3. Extract `drw-ridge`, `drw-clean`, and `drw-ensemble` into reusable recipes under `src/kaggle_auto/recipes/`.
+4. Upgrade generic `kar ensemble` to reproduce rank-normalized OOF optimization with metadata.
+5. Add `kar sync-lb` so real Kaggle scores and ranks are reconciled into local submission history.
+6. Add notebook mining for public feature lists and params.
+7. Add JSON output mode for key commands.
 
 ## DRW Lessons So Far
 
-- Baseline auto lag/rolling features were worse than a simple cleaned feature selection.
+- Baseline auto lag/rolling features were worse than simple cleaned feature selection.
 - Public notebook feature lists are much stronger priors than generic generated features.
 - Strong regularization and small feature sets help low-signal financial data.
-- OOF ensembling gave an immediate lift from `0.003998` to `0.005707`.
+- Closed-form Ridge on top-correlation features is a strong, fast baseline for this class of data.
+- Rank-normalized OOF ensembling was the largest local lift so far.
 - A good toolchain should make those discoveries repeatable, not trapped in one-off scripts.

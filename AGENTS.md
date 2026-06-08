@@ -99,6 +99,45 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
 - **journal.json**: 实验树。
 - **idea_pool.json**: 共享想法池。
 
+## 开源项目 Agent 产物契约
+
+这个仓库的目标是让不同 Coding Agent 都能接手同一个比赛。因此每个自动化能力都应优先写入稳定产物，而不是只把信息留在终端输出里。
+
+### 实验产物
+
+每次训练或候选实验应写入：
+
+```text
+models/vNNN/
+  run.json              # command, git commit, params, data paths, runtime, status
+  cv_scores.json        # metric name, direction, fold scores, mean/std
+  oof_preds.npy         # out-of-fold predictions
+  test_preds.npy        # test predictions when available
+  feature_list.txt      # exact feature names and order
+  importance.csv        # optional but preferred
+  model.pkl             # or models.pkl for fold models
+```
+
+`run.json` 还应记录 parent run、template/recipe name、random seed、CV splitter、target column、ID column、data fingerprint 和错误信息。失败实验也应保留状态文件，避免下一位 Agent 重复跑同一个失败方向。
+
+### 提交产物
+
+每个 submission CSV 应配套一个同名 JSON：
+
+```text
+submissions/sub_xxx.csv
+submissions/sub_xxx.json
+```
+
+JSON 至少应包含 source model versions、ensemble weights、local CV score、metric、生成命令、生成时间、dry-run 验证结果，以及真实提交后的 Kaggle submission id、LB score、rank。手工指定 `--file` 提交时也必须尽量读取相邻 JSON 元数据。
+
+### CLI 输出
+
+- 面向人的默认输出可以使用表格和颜色。
+- 面向 Agent 的命令应逐步提供 `--json`，字段名稳定，失败时也返回可解析错误。
+- 长任务应输出阶段进度，并在结束时写入可复查的本地 artifact。
+- 不要让成功/失败只存在于日志滚屏中。
+
 ## 决策权限矩阵
 
 | 决策 | Agent | 需要用户确认? |
@@ -132,6 +171,19 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
 - 更新 idea pool / journal。
 - 修改 `config.yaml`。
 - 下载或解压竞赛数据到 `data/raw/`。
+
+## 实战后工具链规则
+
+DRW Crypto 暴露出一些通用规则，后续 Agent 应默认遵守：
+
+- 训练前先确认真实数据 schema，不要只相信模板配置。
+- 训练前确认 metric name、direction、CV splitter 和 competition metric 一致。
+- 金融、交易、时间序列数据默认使用 time-based CV；随机 KFold 只能作为对照。
+- 对 GB 级 parquet 默认先读取 metadata 或采样，不直接全量 EDA。
+- 低信噪比数据优先尝试简单、强正则、可解释的模型和特征选择；复杂模型不是默认第一选择。
+- 每次发现有效的一次性命令，应评估是否能沉淀为 recipe/template。
+- 真实提交后应同步 LB score 到本地 submission history 和实验日志。
+- 如果本地 CV 与 LB 明显背离，应先分析 split/metric/leakage，不要盲目继续堆模型。
 
 ## AIDE 树搜索集成
 
@@ -189,3 +241,5 @@ kar submit <name> --flush
 - sample submission 为 `ID,prediction`。
 - 本地 EDA 应采样读取大 parquet。
 - baseline LightGBM 首轮 CV R2 为负，说明需要清洗和特征选择，不应直接提交。
+- 当前已验证 DRW 使用 Pearson-style local objective；不要再用 RMSE/minimize 做主排序。
+- 当前最佳本地候选来自 rank-normalized OOF ensemble，真实 LB 仍需要少量提交校准。
