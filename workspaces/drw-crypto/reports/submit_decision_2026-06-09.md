@@ -54,6 +54,19 @@ Diagnostics:
 | Spearman vs first submission | `0.908233` |
 | mean rank delta vs first submission | `0.089543` |
 
+Submission audit:
+
+| Check | Value |
+| --- | --- |
+| row count | `538150` |
+| columns | `ID,prediction` |
+| ID order matches sample | `true` |
+| missing predictions | `0` |
+| duplicate IDs | `0` |
+| prediction mean | `0.000000` |
+| prediction std | `0.496348` |
+| prediction min/max | `-0.998667 / 0.998202` |
+
 ## Why This Candidate
 
 The first submission had strong local full OOF (`0.149746`) but only reached public LB `0.08199`, so the next submission should not maximize full OOF directly. The current candidate optimizes a recency-weighted proxy:

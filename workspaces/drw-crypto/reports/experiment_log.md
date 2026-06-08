@@ -314,3 +314,15 @@
   - ts_fold5: `0.119889`
   - Spearman vs first submission: `0.908233`
 - Decision: use `sub_calibrated_tail_cli_full.csv` as the locked second-submit file because it is directly reproducible from the CLI.
+
+## Submission Audit - tail_cli_full - 2026-06-09
+
+- Audited `sub_calibrated_tail_cli_full.csv` against `sample_submission.csv`.
+- Rows: `538150`
+- Columns: `ID,prediction`
+- ID order match: `true`
+- Missing predictions: `0`
+- Duplicate IDs: `0`
+- Prediction mean/std: `0.000000 / 0.496348`
+- Prediction min/max: `-0.998667 / 0.998202`
+- Result: schema and distribution checks passed.
