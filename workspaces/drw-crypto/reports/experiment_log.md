@@ -122,3 +122,27 @@
   - ts_fold5: `0.114678`
   - composite: `0.121069`
 - Interpretation: this is now a stronger second-submit candidate than `v017_single` under the current LB-gap proxy, because it improves full, tail10, ts_fold5, and composite while staying more conservative than the first submitted full-OOF optimized blend. Real LB is still uncertain, so using the last daily submission remains a deliberate exploration decision.
+
+## KFold Ridge Neighbor Search - 2026-06-09
+
+- Trained KFold/no-shuffle Ridge variants around `v017`:
+  - `v031`: `top_k=100`, best alpha `30000`, OOF Pearson `0.121516`, fold5 `0.112676`
+  - `v032`: `top_k=200`, best alpha `30000`, OOF Pearson `0.125318`, fold5 `0.101884`
+- Single-model diagnostics after rank normalization show `v032` is stronger than `v017` on the current conservative composite, mainly from better tail20/tail10/ts_fold5.
+- New current second-submit candidate: `sub_calibrated_ensemble_conservative_kfold_v017_v023_v028_v029_v031_v032_v010.csv`
+- Dry-run: valid
+- Weights:
+  - `v032`: `0.249782`
+  - `v017`: `0.170308`
+  - `v028`: `0.158697`
+  - `v010`: `0.157688`
+  - `v023`: `0.105296`
+  - `v029`: `0.100625`
+  - `v031`: `0.057604`
+- Conservative diagnostics:
+  - full: `0.141599`
+  - tail20: `0.120974`
+  - tail10: `0.115559`
+  - ts_fold5: `0.117269`
+  - composite: `0.122449`
+- Interpretation: this supersedes the previous small-Ridge conservative ensemble (`composite 0.121069`) as the best second LB probe. It deliberately sacrifices some full OOF versus the first submitted ensemble to improve recency-weighted diagnostics after the first LB gap.
