@@ -151,7 +151,7 @@ def drw_clean(
     import lightgbm as lgb
     import numpy as np
     import pandas as pd
-    from sklearn.metrics import r2_score
+    from scipy.stats import pearsonr
     from sklearn.model_selection import TimeSeriesSplit
 
     from kaggle_auto.workspace import get_workspace
@@ -240,7 +240,7 @@ def drw_clean(
         )
         pred = model.predict(X.iloc[va_idx])
         oof[va_idx] = pred
-        score = r2_score(y[va_idx], pred)
+        score = pearsonr(y[va_idx], pred)[0]
         fold_scores.append(float(score))
         test_preds += model.predict(X_test).astype("float32") / config.model.cv_folds
         models.append(model)
@@ -248,7 +248,7 @@ def drw_clean(
 
     mean_score = float(np.mean(fold_scores))
     std_score = float(np.std(fold_scores))
-    console.print(f"[green]CV R2:[/green] {mean_score:.6f} +/- {std_score:.6f}")
+    console.print(f"[green]CV Pearson:[/green] {mean_score:.6f} +/- {std_score:.6f}")
 
     models_dir = workspace / "models"
     version = 1
@@ -295,7 +295,7 @@ def drw_clean(
 @app.command("drw-ensemble")
 def drw_ensemble(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
-    models: str = typer.Option("v011,v010,v007,v003", "--models", help="Comma-separated model versions"),
+    models: str = typer.Option("v010,v011,v007,v003", "--models", help="Comma-separated model versions"),
     step: int = typer.Option(20, "--step", help="Weight grid denominator, e.g. 20 means 0.05 steps"),
 ):
     """Build a simple OOF-optimized ensemble for DRW models."""
@@ -304,7 +304,7 @@ def drw_ensemble(
 
     import numpy as np
     import pandas as pd
-    from sklearn.metrics import r2_score
+    from scipy.stats import pearsonr
 
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
@@ -355,7 +355,7 @@ def drw_ensemble(
             continue
         weights = np.array(raw_weights, dtype=float) / step
         blended = sum(weights[i] * loaded[i]["oof"] for i in range(n))
-        score = r2_score(y, blended)
+        score = pearsonr(y, blended)[0]
         if best is None or score > best["score"]:
             best = {"score": float(score), "weights": weights}
 
@@ -372,14 +372,250 @@ def drw_ensemble(
     meta = {
         "models": [{"version": item["version"], "cv_score": item["score"]} for item in loaded],
         "weights": {loaded[i]["version"]: float(best["weights"][i]) for i in range(n)},
-        "oof_r2": best["score"],
+        "metric": "pearson",
+        "oof_pearson": best["score"],
         "submission": sub_path.name,
     }
     meta_path.write_text(json.dumps(meta, indent=2))
 
     validation = Submitter(workspace, config).validate(sub_path)
-    console.print(f"[green]Ensemble OOF R2:[/green] {best['score']:.6f}")
+    console.print(f"[green]Ensemble OOF Pearson:[/green] {best['score']:.6f}")
     console.print(f"  Weights: {meta['weights']}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
+
+
+@app.command("drw-public")
+def drw_public(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    model: str = typer.Option("lgbm", "--model", help="Model: lgbm|xgb"),
+    n_folds: int = typer.Option(3, "--folds", help="KFold splits"),
+    decay: float = typer.Option(0.95, "--decay", help="Time-decay sample weight"),
+):
+    """Reproduce public DRW 25-feature time-slice baseline locally."""
+    import gc
+    import json
+    import pickle
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import pearsonr
+    from sklearn.model_selection import KFold
+
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+
+    public_features = [
+        "X863", "X856", "X344", "X598", "X862", "X385", "X852", "X603",
+        "X860", "X674", "X415", "X345", "X137", "X855", "X174", "X302",
+        "X178", "X532", "X168", "X612", "bid_qty", "ask_qty", "buy_qty",
+        "sell_qty", "volume",
+    ]
+
+    train_path = workspace / config.data.train
+    test_path = workspace / config.data.test
+    target_col = config.data.target_column
+
+    console.print("[yellow]Loading public feature subset...[/yellow]")
+    import pyarrow.parquet as pq
+    available_train_cols = set(pq.ParquetFile(train_path).schema.names)
+    available_test_cols = set(pq.ParquetFile(test_path).schema.names)
+    available_features = [
+        col for col in public_features
+        if col in available_train_cols and col in available_test_cols
+    ]
+    missing_features = [col for col in public_features if col not in available_features]
+    if missing_features:
+        console.print(f"[yellow]Missing public features skipped:[/yellow] {missing_features}")
+    if not available_features:
+        console.print("[red]No public features are available in this data version.[/red]")
+        raise typer.Exit(1)
+
+    train = pd.read_parquet(train_path, columns=available_features + [target_col]).reset_index(drop=True)
+    test = pd.read_parquet(test_path, columns=available_features).reset_index(drop=True)
+
+    def create_time_decay_weights(n: int, d: float) -> np.ndarray:
+        positions = np.arange(n)
+        normalized = positions / float(max(n - 1, 1))
+        weights = d ** (1.0 - normalized)
+        return weights * n / weights.sum()
+
+    if model == "xgb":
+        from xgboost import XGBRegressor
+        estimator_cls = XGBRegressor
+        params = {
+            "tree_method": "hist",
+            "colsample_bylevel": 0.4778015829774066,
+            "colsample_bynode": 0.362764358742407,
+            "colsample_bytree": 0.7107423488010493,
+            "gamma": 1.7094857725240398,
+            "learning_rate": 0.02213323588455387,
+            "max_depth": 20,
+            "max_leaves": 12,
+            "min_child_weight": 16,
+            "n_estimators": 1667,
+            "subsample": 0.06566669853471274,
+            "reg_alpha": 39.352415706891264,
+            "reg_lambda": 75.44843704068275,
+            "verbosity": 0,
+            "random_state": config.model.seed,
+            "n_jobs": -1,
+        }
+    else:
+        from lightgbm import LGBMRegressor
+        estimator_cls = LGBMRegressor
+        params = {
+            "boosting_type": "gbdt",
+            "colsample_bytree": 0.5625888953382505,
+            "learning_rate": 0.029312951475451557,
+            "min_child_samples": 63,
+            "min_child_weight": 0.11456572852335424,
+            "n_estimators": 126,
+            "n_jobs": -1,
+            "num_leaves": 37,
+            "random_state": config.model.seed,
+            "reg_alpha": 85.2476527854083,
+            "reg_lambda": 99.38305361388907,
+            "subsample": 0.450669817684892,
+            "verbose": -1,
+        }
+
+    n_samples = len(train)
+    slices = [
+        {"name": "full_data", "cutoff": 0},
+        {"name": "last_75pct", "cutoff": int(0.25 * n_samples)},
+        {"name": "last_50pct", "cutoff": int(0.50 * n_samples)},
+    ]
+    y = train[target_col].to_numpy()
+    full_weights = create_time_decay_weights(n_samples, decay)
+    kf = KFold(n_splits=n_folds, shuffle=False)
+
+    oof_by_slice = {s["name"]: np.zeros(n_samples, dtype="float32") for s in slices}
+    test_by_slice = {s["name"]: np.zeros(len(test), dtype="float32") for s in slices}
+    fold_scores = {s["name"]: [] for s in slices}
+    models = []
+
+    for fold, (train_idx, valid_idx) in enumerate(kf.split(train), 1):
+        console.print(f"[yellow]Fold {fold}/{n_folds}[/yellow]")
+        X_valid = train.iloc[valid_idx][available_features]
+        y_valid = y[valid_idx]
+
+        for slice_spec in slices:
+            slice_name = slice_spec["name"]
+            cutoff = slice_spec["cutoff"]
+            rel_idx = train_idx[train_idx >= cutoff] - cutoff
+            if len(rel_idx) == 0:
+                continue
+
+            subset = train.iloc[cutoff:].reset_index(drop=True)
+            X_train = subset.iloc[rel_idx][available_features]
+            y_train = subset.iloc[rel_idx][target_col].to_numpy()
+            if cutoff == 0:
+                sample_weight = full_weights[train_idx]
+            else:
+                sample_weight = create_time_decay_weights(len(subset), decay)[rel_idx]
+
+            fitted = estimator_cls(**params)
+            fit_kwargs = {"sample_weight": sample_weight}
+            if model == "lgbm":
+                fit_kwargs["eval_set"] = [(X_valid, y_valid)]
+            else:
+                fit_kwargs["eval_set"] = [(X_valid.to_numpy(), y_valid)]
+                X_train = X_train.to_numpy()
+
+            fitted.fit(X_train, y_train, **fit_kwargs)
+            models.append({"fold": fold, "slice": slice_name, "model": fitted})
+
+            mask = valid_idx >= cutoff
+            if mask.any():
+                idxs = valid_idx[mask]
+                pred_input = train.iloc[idxs][available_features]
+                if model == "xgb":
+                    pred_input = pred_input.to_numpy()
+                oof_by_slice[slice_name][idxs] = fitted.predict(pred_input)
+            if cutoff > 0 and (~mask).any():
+                oof_by_slice[slice_name][valid_idx[~mask]] = oof_by_slice["full_data"][valid_idx[~mask]]
+
+            test_input = test[available_features]
+            if model == "xgb":
+                test_input = test_input.to_numpy()
+            test_by_slice[slice_name] += fitted.predict(test_input).astype("float32") / n_folds
+            score = pearsonr(y, oof_by_slice[slice_name])[0]
+            fold_scores[slice_name].append(float(score))
+            console.print(f"  {slice_name}: running Pearson={score:.6f}")
+            gc.collect()
+
+    slice_scores = {name: float(pearsonr(y, preds)[0]) for name, preds in oof_by_slice.items()}
+    simple_oof = np.mean(list(oof_by_slice.values()), axis=0)
+    simple_test = np.mean(list(test_by_slice.values()), axis=0)
+    simple_score = float(pearsonr(y, simple_oof)[0])
+
+    positive_total = sum(max(score, 0.0) for score in slice_scores.values())
+    if positive_total > 0:
+        weights = {name: max(score, 0.0) / positive_total for name, score in slice_scores.items()}
+    else:
+        weights = {name: 1 / len(slice_scores) for name in slice_scores}
+    weighted_oof = sum(weights[name] * oof_by_slice[name] for name in weights)
+    weighted_test = sum(weights[name] * test_by_slice[name] for name in weights)
+    weighted_score = float(pearsonr(y, weighted_oof)[0])
+
+    if weighted_score >= simple_score:
+        final_oof = weighted_oof
+        final_test = weighted_test
+        final_score = weighted_score
+        ensemble_mode = "weighted_slices"
+    else:
+        final_oof = simple_oof
+        final_test = simple_test
+        final_score = simple_score
+        ensemble_mode = "simple_slices"
+
+    models_dir = workspace / "models"
+    version = 1
+    while (models_dir / f"v{version:03d}").exists():
+        version += 1
+    model_path = models_dir / f"v{version:03d}"
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    with open(model_path / "model.pkl", "wb") as f:
+        pickle.dump(models, f)
+    np.save(model_path / "oof_preds.npy", final_oof)
+    np.save(model_path / "test_preds.npy", final_test)
+    pd.DataFrame({"feature": available_features, "importance": 1.0}).to_csv(
+        model_path / "importance.csv", index=False
+    )
+    with open(model_path / "cv_scores.json", "w") as f:
+        json.dump({
+            "fold_scores": list(slice_scores.values()),
+            "mean_score": final_score,
+            "std_score": float(np.std(list(slice_scores.values()))),
+            "metric": "pearson",
+            "model_type": f"public_{model}",
+            "features": available_features,
+            "missing_public_features": missing_features,
+            "params": params,
+            "slice_scores": slice_scores,
+            "slice_weights": weights,
+            "ensemble_mode": ensemble_mode,
+            "decay": decay,
+            "n_folds": n_folds,
+        }, f, indent=2)
+
+    submitter = Submitter(workspace, config)
+    sub_path = submitter.generate_submission(final_test, model_version=f"v{version:03d}")
+    validation = submitter.validate(sub_path)
+
+    console.print(f"[green]Public baseline Pearson:[/green] {final_score:.6f} ({ensemble_mode})")
+    console.print(f"  Slice scores: {slice_scores}")
+    console.print(f"  Weights: {weights}")
+    console.print(f"  Model: {model_path}")
     console.print(f"  Submission: {sub_path}")
     console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
     if not validation.is_valid:

@@ -1,119 +1,91 @@
 # Kaggle Auto Research
 
-<p align="center">
-  <strong>AI Agent 驱动的 Kaggle 竞赛自动研究框架</strong>
-</p>
+面向 Kaggle 竞赛的 Agent 化自动研究框架。
 
-<p align="center">
-  <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue"></a>
-  <img alt="Status" src="https://img.shields.io/badge/status-experimental-orange">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
-</p>
+Kaggle Auto Research 把竞赛调研、数据下载、EDA、特征生成、模型训练、实验迭代、集成、提交验证和排行榜反馈拆成可复用 CLI 与版本化 workspace artifacts。目标不是写一次性的比赛脚本，而是让人类和 Coding Agent 能持续、安全、可复现地推进竞赛结果。
 
-<p align="center">
-  简体中文 | <a href="./README-EN.md">English</a>
-</p>
-
-Kaggle Auto Research 是一个面向 Kaggle 竞赛的 Agent 化自动研究框架。它把竞赛调研、数据下载、EDA、特征生成、模型训练、迭代优化、集成和提交预算管理拆成可复用的 CLI 与工作区产物，让每次实验都能被追踪、复现和继续优化。
-
-> 当前项目仍处于实验阶段，适合研究、原型验证和内部竞赛工作流自动化。实际 Kaggle 提交默认不会自动执行。
+> 当前项目处于实验阶段，适合研究、原型验证和内部竞赛自动化。默认不会自动向 Kaggle 提交，真实提交必须显式执行。
 
 ## 核心特性
 
-- **工作区优先**：所有竞赛产物都保存在 `workspaces/<competition>/`，避免不同竞赛互相污染。
-- **配置即事实源**：每个工作区的 `config.yaml` 管理数据路径、目标列、指标、CV、模型和提交预算。
-- **Agent 流水线**：Research、EDA、Feature、Train、Iteration、Submit 阶段通过文件系统传递产物。
-- **产物版本化**：特征、模型、OOF、测试集预测和提交文件按版本保存，不覆盖历史结果。
-- **提交保护**：默认只生成和 dry-run 验证提交文件；真实提交受预算和用户确认约束。
-- **实验树迭代**：内置 `journal.json` 和 `idea_pool.json`，记录实验树、候选方案和下一步优化思路。
+- **Agent-first 工作流**：Research、EDA、Feature、Train、Iteration、Submit 等阶段通过文件系统通信，便于 Agent 检查、恢复和继续优化。
+- **Workspace 隔离**：每个竞赛在 `workspaces/<competition>/` 下独立保存配置、数据、模型、报告和提交。
+- **配置即事实源**：`config.yaml` 管理数据路径、目标列、提交格式、metric、CV 策略、模型和提交预算。
+- **版本化产物**：特征、模型、OOF、测试预测、提交文件都按版本保存，避免覆盖历史结果。
+- **提交安全**：默认只生成和 dry-run 验证提交文件；真实 Kaggle 提交受预算和用户确认约束。
+- **公开 notebook 可吸收**：支持拉取公开 notebook，后续会进一步挖掘特征列表、模型参数、CV 和集成公式。
+- **Agent 工具链路线图**：见 [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md)。
 
-## 能做什么
+## 当前 DRW Crypto 进展
 
-| 阶段 | 命令 | 产物 |
-| --- | --- | --- |
-| 认证 | `kar auth` | Kaggle 凭证状态 |
-| 初始化 | `kar init <name>` | 新竞赛工作区 |
-| 数据 | `kar data <name>` | 下载并解压后的原始数据 |
-| 调研 | `kar research <name>` | `reports/research_notes.md` |
-| EDA + 特征 | `kar eda <name>` | `reports/eda_summary.md`, `data/features/v*.parquet` |
-| 训练 | `kar train <name>` | `models/v*/model.pkl`, CV 分数、OOF/测试集预测 |
-| 迭代 | `kar pipeline <name> --iterate 5` | 更新实验树和 idea pool |
-| 集成 | `kar ensemble <name>` | 基于本地最优模型的集成结果 |
-| 提交 | `kar submit <name> --dry-run -f ...` | 验证提交文件，可进入候选队列 |
+这个仓库正在用 DRW Crypto Market Prediction 做工具链实战验证。
+
+- 初始自动特征 baseline：CV R2 `-0.002859`
+- 清洗特征 + LightGBM：最佳单模型 Pearson 约 `0.0724`
+- Pearson OOF grid ensemble：Pearson `0.077989`
+- 当前最佳本地 submission：`sub_ensemble_v010_v011_v007_v003.csv`
+- 公开榜 top 约 `0.11 - 0.14`
+
+结论：工具链已经能跑通并持续改善，但距离真正强结果还有差距。下一步重点是复现公开 notebook 的 25 特征、time-decay slices、XGB/LGBM/Ridge ensemble，并把它们沉淀成可复用 recipe。
 
 ## 安装
 
 ```bash
-git clone https://github.com/<your-org>/kaggle-auto-research.git
-cd kaggle-auto-research
+git clone https://github.com/ranxi2001/kaggel-auto-research.git
+cd kaggel-auto-research
 
 python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # macOS / Linux
-
+.venv\Scripts\activate
 pip install -e .
 ```
 
-开发环境：
+Windows 项目根目录提供了短命令包装：
+
+```bash
+.\kar auth
+.\kar ls
+```
+
+Git Bash 中可以使用：
+
+```bash
+./kar.cmd auth
+```
+
+开发依赖：
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-可选深度学习依赖：
-
-```bash
-pip install -e ".[deep]"
-```
-
-## Kaggle 认证
-
-首次下载竞赛数据前先认证：
-
-```bash
-kar auth
-```
-
-也可以使用 Kaggle API 标准凭证文件：
-
-```text
-~/.kaggle/kaggle.json
-```
-
-Windows 常见路径：
-
-```text
-C:\Users\<you>\.kaggle\kaggle.json
-```
-
 ## 快速开始
 
 ```bash
-# 1. 创建工作区
+# 1. 登录 Kaggle
+kar auth
+
+# 2. 创建 workspace
 kar init titanic --type tabular --url https://www.kaggle.com/competitions/titanic
 
-# 2. 下载并解压数据
+# 3. 下载并解压数据
 kar data titanic
 
-# 3. 分阶段执行
+# 4. 分阶段执行
 kar research titanic
 kar eda titanic
 kar train titanic
 
-# 4. 查看流水线状态
-kar status titanic
-
-# 5. 只验证提交文件，不提交到 Kaggle
+# 5. 生成/验证提交文件，不实际提交
 kar submit titanic --dry-run -f submissions/sub_001.csv
 ```
 
-从头运行完整流水线：
+完整 pipeline：
 
 ```bash
 kar pipeline titanic --full
 ```
 
-运行多轮优化：
+迭代优化：
 
 ```bash
 kar pipeline titanic --iterate 5
@@ -121,7 +93,7 @@ kar analyze titanic
 kar ensemble titanic
 ```
 
-## CLI 命令
+## 常用 CLI
 
 ```bash
 kar ls
@@ -139,21 +111,23 @@ kar pipeline <name> --iterate 5
 kar status <name>
 kar analyze <name>
 kar ensemble <name> --top 5
+kar leaderboard <name>
+kar leaderboard <name> --top -n 10
 kar submit <name> --status
 kar submit <name> --history
 kar submit <name> --dry-run -f submissions/sub_001.csv
 kar submit <name> --flush
 ```
 
-当前 DRW Crypto 研究线还有一个专用清洗训练命令：
+DRW Crypto 当前研究命令：
 
 ```bash
-kar drw-clean drw-crypto --top-k 350 --n-estimators 700
+kar drw-clean drw-crypto --top-k 130 --n-estimators 1200 --learning-rate 0.015
+kar drw-public drw-crypto --model lgbm --folds 3
+kar drw-ensemble drw-crypto --models v010,v011,v007,v003
 ```
 
-## 工作区结构
-
-每个竞赛都有独立工作区：
+## Workspace 结构
 
 ```text
 workspaces/<competition>/
@@ -178,24 +152,24 @@ workspaces/<competition>/
 `-- .state/
 ```
 
-## 配置示例
+大数据、模型、提交和缓存默认不提交到 git。
 
-`config.yaml` 是每个工作区的单一事实源。
+## 配置示例
 
 ```yaml
 competition:
   name: "titanic"
   url: "https://www.kaggle.com/competitions/titanic"
   type: "tabular"
-  metric: "rmse"
-  metric_direction: "minimize"
+  metric: "accuracy"
+  metric_direction: "maximize"
 
 data:
   train: "data/raw/train.csv"
   test: "data/raw/test.csv"
   sample_submission: "data/raw/sample_submission.csv"
-  target_column: "target"
-  id_column: "id"
+  target_column: "Survived"
+  id_column: "PassengerId"
 
 model:
   primary: "lightgbm"
@@ -205,21 +179,21 @@ model:
 
 submission:
   auto_submit: false
-  best_threshold: 0.01
-  max_daily: 5
+  best_threshold: 0.001
+  max_daily: 2
 ```
 
-时间序列、金融和交易类竞赛建议使用 time-based CV：
+金融、交易和时间序列类竞赛建议使用 time-based CV：
 
 ```yaml
 model:
   cv_strategy: "time_series_split"
 ```
 
-## 架构
+## Agent 架构
 
 ```text
-用户 / Agent
+User / Agent
     |
     v
 kar CLI
@@ -235,7 +209,7 @@ Pipeline Runner
     +--> Submit Agent    --> submissions/, .state/submission_budget.json
 ```
 
-流水线状态机：
+状态机：
 
 ```text
 RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
@@ -247,100 +221,42 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
                                                      SUBMIT
 ```
 
-## 安全边界
+详细规则见 [agents.md](agents.md)。
 
-Kaggle Auto Research 默认自动执行可逆工作，并保护不可逆操作。
+## 为什么面向 Agent 设计
 
-默认可自动执行：
+Agent 跑竞赛时最容易失败的地方不是“不会写模型”，而是：
 
-- 创建工作区。
-- 下载并解压竞赛数据。
-- 生成报告、特征、模型、预测和提交 CSV。
-- 更新 `config.yaml`、`.state/`、`journal.json` 和 `idea_pool.json`。
-- dry-run 验证提交文件。
+- metric 和 CV 搞错；
+- config 和真实数据 schema 不一致；
+- 大 parquet 直接爆内存；
+- 实验产物缺元数据，后续无法比较；
+- 公开 notebook 的有效经验没有结构化吸收；
+- 提交预算被浪费；
+- CLI 输出难以被机器解析。
 
-需要明确用户决策：
+本项目会优先补齐这些工具链能力，而不是只堆模型脚本。
 
-- 提交到 Kaggle。
-- 删除模型、数据或提交文件。
-- 修改凭证或 `.env`。
-- push 到远程 Git 仓库。
+## Roadmap
 
-## 支持的竞赛类型
+近期重点：
 
-| 类型 | 适用场景 | 默认模型族 |
-| --- | --- | --- |
-| `tabular` | 结构化 CSV/parquet 竞赛 | LightGBM, XGBoost |
-| `crypto` | 金融、加密货币、时间序列预测 | LightGBM + time-based CV |
-| `llm` | NLP 和生成式 AI 竞赛 | Transformers / prompt workflows |
+- `kar inspect <workspace> --fix-config`：检查并修复 schema/config。
+- Experiment registry：统一记录每次实验的 command、params、features、metric、CV、runtime。
+- Notebook miner：提取公开 notebook 的 feature list、params、CV 和 ensemble 公式。
+- Recipe system：把 `drw-clean` 这类一赛一脚本沉淀为可复用模板。
+- OOF ensemble builder：稳定复现 grid/ridge/rank-average ensemble。
+- `--json` 输出：让 Agent 能可靠解析 CLI。
+- `kar sync-lb`：同步 Kaggle LB 分数和 rank 到本地 history。
 
-## 开发
+完整路线图见 [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md)。
 
-```bash
-make install
-make dev
-make test
-make lint
-make format
-```
+## 安全原则
 
-等价命令：
+- 默认不自动提交 Kaggle。
+- 提交到 Kaggle、删除数据/模型、修改 credentials、push remote 都需要明确用户意图。
+- 训练、生成特征、生成提交文件、dry-run 验证、更新实验记录可以自动执行。
 
-```bash
-pytest tests/ -v
-ruff check src/ cli/ tests/
-ruff format src/ cli/ tests/
-```
+## License
 
-## 项目结构
-
-```text
-kaggle-auto-research/
-|-- cli/                    # Typer CLI 入口
-|-- src/kaggle_auto/        # Python 核心包
-|   |-- eda/
-|   |-- features/
-|   |-- models/
-|   |-- pipeline/
-|   |-- research/
-|   |-- submission/
-|   |-- tuning/
-|   `-- utils/
-|-- templates/              # 工作区配置模板
-|-- tests/
-|-- workspaces/             # 本地竞赛工作区
-|-- agents.md               # Agent 行为规则
-|-- CLAUDE.md               # Claude Code 项目说明
-`-- pyproject.toml
-```
-
-## 路线图
-
-- 更稳健的数据 schema 校验。
-- 更完整的 Kaggle 指标注册表。
-- 公开 notebook / discussion 调研导出。
-- Public leaderboard 追踪和本地/LB 相关性分析。
-- 面向全自动 Agent 的安全提交确认流程。
-- Vision、NLP、推荐系统等更多竞赛模板。
-
-## 贡献
-
-欢迎提交 PR。适合优先改进的方向：
-
-- 为流水线阶段和提交校验补测试。
-- 改进竞赛模板。
-- 增加指标和 CV 策略。
-- 改进大 parquet 数据集的 EDA 报告。
-- 增加模型适配器，同时保持产物格式稳定。
-
-提交 PR 前建议运行：
-
-```bash
-make test
-make lint
-```
-
-## 许可证
-
-MIT License.
-
+MIT

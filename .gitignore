@@ -5,6 +5,7 @@ workspaces/*/data/features/
 workspaces/*/models/
 workspaces/*/submissions/
 workspaces/*/.state/
+workspaces/*/notebooks/public/
 *.parquet
 *.h5
 *.pkl
