@@ -58,11 +58,20 @@ class SubmissionBudget:
 
     def reserve(self, submission_path: str, cv_score: float, reason: str):
         """Queue a candidate for submission (doesn't actually submit)."""
-        self.data["reserved"].append({
-            "path": submission_path,
+        normalized_path = str(Path(submission_path).resolve())
+        entry = {
+            "path": normalized_path,
             "cv_score": cv_score,
             "reason": reason,
             "date_reserved": str(date.today()),
+        }
+        for idx, reserved in enumerate(self.data.get("reserved", [])):
+            if str(Path(reserved.get("path", "")).resolve()) == normalized_path:
+                self.data["reserved"][idx] = entry
+                self._save()
+                return
+        self.data["reserved"].append({
+            **entry,
         })
         self._save()
 

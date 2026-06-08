@@ -223,6 +223,7 @@ kar submit <name> --flush
 Note: `kar.cmd` is a short Windows launcher at the repository root, so users do not need to type `.\.venv\Scripts\kar.exe`. After editable installation, `kar` also works directly.
 
 `kar submit <name> --status` shows the local budget date, next local reset date, and full reserve-queue filenames. Use it before `--flush` to confirm exactly which candidate will be submitted.
+If the same submission file is queued more than once, the reserve entry is updated in place instead of duplicated.
 
 DRW Crypto research helpers:
 
