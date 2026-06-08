@@ -1302,6 +1302,18 @@ def drw_compare_submissions(
             except Exception:
                 meta = {}
         scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
+        local_score = None
+        score_source = None
+        for source, value in [
+            ("scores.utility", scores.get("utility")),
+            ("scores.composite", scores.get("composite")),
+            ("oof_pearson", meta.get("oof_pearson")),
+            ("mean_score", meta.get("mean_score")),
+        ]:
+            if value is not None:
+                local_score = float(value)
+                score_source = source
+                break
         loaded.append({
             "name": path.name,
             "path": path,
@@ -1315,6 +1327,8 @@ def drw_compare_submissions(
             "mean": float(np.mean(pred)),
             "min": float(np.min(pred)),
             "max": float(np.max(pred)),
+            "local_score": local_score,
+            "score_source": score_source,
             "composite": scores.get("composite"),
             "utility": scores.get("utility"),
             "spearman_to_anchor": meta.get("spearman_to_anchor"),
@@ -1335,6 +1349,8 @@ def drw_compare_submissions(
             "std": item["std"],
             "min": item["min"],
             "max": item["max"],
+            "local_score": item["local_score"],
+            "score_source": item["score_source"],
             "composite": item["composite"],
             "utility": item["utility"],
             "spearman_to_anchor": item["spearman_to_anchor"],
@@ -1360,17 +1376,17 @@ def drw_compare_submissions(
     pd.DataFrame(pair_rows).to_csv(pair_path, index=False)
 
     table = Table(title=f"Submission Compare: {name}")
-    for column in ["file", "valid", "composite", "utility", "spear_anchor", "spear_failed", "rank_delta"]:
+    for column in ["file", "valid", "local", "source", "composite", "utility", "spear_failed"]:
         table.add_column(column)
     for row in summary_rows:
         table.add_row(
             str(row["file"]),
             "Y" if row["valid"] else "N",
+            "" if row["local_score"] is None else f"{float(row['local_score']):.6f}",
+            "" if row["score_source"] is None else str(row["score_source"]),
             "" if row["composite"] is None else f"{float(row['composite']):.6f}",
             "" if row["utility"] is None else f"{float(row['utility']):.6f}",
-            "" if row["spearman_to_anchor"] is None else f"{float(row['spearman_to_anchor']):.6f}",
             "" if row["spearman_to_failed"] is None else f"{float(row['spearman_to_failed']):.6f}",
-            "" if row["rank_delta_to_anchor"] is None else f"{float(row['rank_delta_to_anchor']):.6f}",
         )
     console.print(table)
     console.print(f"  Summary: {summary_path}")

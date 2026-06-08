@@ -536,12 +536,14 @@
 
 - Added `kar drw-compare-submissions` to compare candidate CSVs before spending Kaggle submission budget.
 - The command validates each file, reads adjacent JSON metadata when present, writes summary and pairwise reports, and prints a compact table.
+- The comparison parser now normalizes local score sources in this order: `scores.utility`, `scores.composite`, `oof_pearson`, `mean_score`.
 - Ran:
   `kar drw-compare-submissions drw-crypto --files sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv,sub_calibrated_tail_cli_full.csv,sub_anchor_blend_utility_scan.csv,sub_anchor_blend_conservative.csv,sub_anti_failed_rank_beta020.csv --output-tag next_submit_compare`
 - Reports:
   - `reports/next_submit_compare_summary.csv`
   - `reports/next_submit_compare_pairs.csv`
 - Key checks:
+  - first submitted ensemble: valid, local score `0.149746` from `oof_pearson`, public LB `0.08199`.
   - `sub_anchor_blend_utility_scan.csv`: valid, composite `0.129080`, utility `0.129080`, Spearman to anchor `0.995783`, Spearman to failed `0.934484`.
   - `sub_anchor_blend_conservative.csv`: valid, composite `0.129544`, Spearman to anchor `0.994191`, Spearman to failed `0.938277`.
   - `sub_anti_failed_rank_beta020.csv`: valid, no OOF score, Spearman to anchor `0.996688`, Spearman to failed `0.871446`.

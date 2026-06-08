@@ -128,11 +128,13 @@ Run this before the next real submission to verify the candidate set:
 
 Current comparison output:
 
-| File | Valid | Composite | Utility | Spearman to anchor | Spearman to failed | Rank delta |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `sub_anchor_blend_utility_scan.csv` | `true` | `0.129080` | `0.129080` | `0.995783` | `0.934484` | `0.019854` |
-| `sub_anchor_blend_conservative.csv` | `true` | `0.129544` |  | `0.994191` | `0.938277` | `0.023247` |
-| `sub_anti_failed_rank_beta020.csv` | `true` |  |  | `0.996688` | `0.871446` | `0.017765` |
+| File | Valid | Local score | Source | Utility | Spearman to failed | Rank delta |
+| --- | --- | ---: | --- | ---: | ---: | ---: |
+| `sub_ensemble_ranknorm_...v026.csv` | `true` | `0.149746` | `oof_pearson` |  |  |  |
+| `sub_calibrated_tail_cli_full.csv` | `true` | `0.123363` | `scores.composite` |  |  |  |
+| `sub_anchor_blend_utility_scan.csv` | `true` | `0.129080` | `scores.utility` | `0.129080` | `0.934484` | `0.019854` |
+| `sub_anchor_blend_conservative.csv` | `true` | `0.129544` | `scores.composite` |  | `0.938277` | `0.023247` |
+| `sub_anti_failed_rank_beta020.csv` | `true` |  |  |  | `0.871446` | `0.017765` |
 
 Pairwise checks:
 
