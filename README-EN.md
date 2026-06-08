@@ -75,8 +75,8 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 - Clean feature selection + LightGBM: best single-model Pearson around `0.0724`
 - Public-notebook-style XGB time-slice: Pearson `0.053338`, but useful as an ensemble-diversity signal
 - Closed-form Ridge on top-correlation features: TimeSeriesSplit Pearson `0.143261`
-- Pearson OOF rank-normalized simplex ensemble: common-valid-OOF Pearson `0.149734`
-- Current best local submission: `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022.csv`
+- Pearson OOF rank-normalized simplex ensemble: common-valid-OOF Pearson `0.149746`
+- Current best local submission: `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`
 - Public leaderboard top is around `0.11 - 0.14`
 
 Conclusion: the toolchain can run end-to-end and improve; the current local OOF score is now near the strong public-leaderboard range. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to use a small number of real submissions to validate CV/LB consistency and keep turning Ridge/XGB/LGBM blends into reusable recipes.
@@ -179,7 +179,7 @@ kar drw-clean drw-crypto --top-k 130 --n-estimators 1200 --learning-rate 0.015
 kar drw-ridge drw-crypto --top-k 180 --alphas 300,1000,3000,10000 --cv timeseries
 kar drw-public drw-crypto --model lgbm --folds 3
 kar drw-ensemble drw-crypto --models v010,v011,v007,v003
-kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018,v019,v020,v021,v022 --method optimize --transform ranknorm
+kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018,v019,v020,v021,v022,v023,v024,v025,v026 --method optimize --transform ranknorm
 ```
 
 ## Workspace Layout
