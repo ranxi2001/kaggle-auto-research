@@ -86,3 +86,15 @@
   - ts fold 4: `0.166380`
   - ts fold 5: `0.110915`
 - Interpretation: this is a valid conservative second candidate, but evidence is mixed. It improves some late fold diagnostics while not improving the most recent 10% tail versus the already submitted ensemble. Do not spend the last daily submission on it unless we decide that ts_fold4/5 stability is the better LB proxy than tail_10%.
+
+## Calibrated Candidate Sweep - 2026-06-09
+
+- Attempted stable-feature Ridge search using fold-specific target correlations. Two full-data scripts timed out before producing artifacts; this should be reimplemented as a sampled/vectorized CLI tool before retrying.
+- Generated low-cost calibrated candidates from existing OOF/test artifacts instead. Report: `reports/calibrated_candidate_summary.csv`.
+- Dry-run valid candidates:
+  - `sub_calibrated_v017_single.csv`
+  - `sub_calibrated_stable_020_017_023_010.csv`
+- Conservative ranking by `0.35*ts_fold5 + 0.25*tail10 + 0.20*tail20 + 0.20*full`:
+  - `v017_single`: composite `0.116791`, full `0.133303`, tail20 `0.120015`, tail10 `0.104541`, ts_fold5 `0.114263`
+  - `stable_020_017_023_010`: composite `0.115122`, full `0.142775`, tail20 `0.111257`, tail10 `0.106182`, ts_fold5 `0.107915`
+- Interpretation: `v017_single` is the safest second-candidate proxy because it has full OOF coverage and the best conservative late composite, even though its full OOF is below the already submitted ensemble. This is a possible use of the final daily submission only if we accept that the first LB result rewards robustness more than full OOF.
