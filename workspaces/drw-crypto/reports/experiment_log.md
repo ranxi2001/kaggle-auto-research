@@ -98,3 +98,27 @@
   - `v017_single`: composite `0.116791`, full `0.133303`, tail20 `0.120015`, tail10 `0.104541`, ts_fold5 `0.114263`
   - `stable_020_017_023_010`: composite `0.115122`, full `0.142775`, tail20 `0.111257`, tail10 `0.106182`, ts_fold5 `0.107915`
 - Interpretation: `v017_single` is the safest second-candidate proxy because it has full OOF coverage and the best conservative late composite, even though its full OOF is below the already submitted ensemble. This is a possible use of the final daily submission only if we accept that the first LB result rewards robustness more than full OOF.
+
+## Small Top-K Strong-Regularized Ridge - 2026-06-09
+
+- Trained three additional TimeSeries Ridge candidates:
+  - `v028`: `top_k=40`, best alpha `30000`, OOF Pearson `0.135792`, fold5 `0.090686`
+  - `v029`: `top_k=60`, best alpha `10000`, OOF Pearson `0.134066`, fold5 `0.083143`
+  - `v030`: `top_k=100`, best alpha `30000`, OOF Pearson `0.133269`, fold5 `0.089768`
+- Single-model conclusion: none of `v028-v030` beats `v017_single` as a conservative standalone candidate.
+- Ensemble test: `sub_calibrated_ensemble_conservative_v017_v020_v023_v028_v029_v030_v010.csv` dry-run valid.
+- Ensemble weights:
+  - `v017`: `0.326560`
+  - `v028`: `0.206291`
+  - `v010`: `0.180569`
+  - `v023`: `0.153317`
+  - `v029`: `0.133264`
+  - `v020`: `0.000000`
+  - `v030`: `0.000000`
+- Conservative diagnostics for this ensemble:
+  - full: `0.144911`
+  - tail20: `0.117256`
+  - tail10: `0.113992`
+  - ts_fold5: `0.114678`
+  - composite: `0.121069`
+- Interpretation: this is now a stronger second-submit candidate than `v017_single` under the current LB-gap proxy, because it improves full, tail10, ts_fold5, and composite while staying more conservative than the first submitted full-OOF optimized blend. Real LB is still uncertain, so using the last daily submission remains a deliberate exploration decision.
