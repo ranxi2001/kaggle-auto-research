@@ -250,3 +250,26 @@
   - Spearman: `0.910802`
   - mean rank delta: `0.088205`
 - Interpretation: this supersedes `sub_calibrated_tail10_fast_tuned.csv` as the current best second-submit candidate. The gain is small but consistent on composite, tail10, and diversity versus the first submission.
+
+## Refined Tail10 Core Search - 2026-06-09
+
+- Ran a finer fast search around the `tail10_expanded_tuned` core models. Report: `reports/tail10_refined_tuning.csv`.
+- New recommended second-submit candidate: `sub_calibrated_tail10_refined_tuned.csv`
+- Dry-run: valid
+- Weights:
+  - `v032`: `0.536970`
+  - `v028`: `0.223221`
+  - `v010`: `0.158697`
+  - `v017`: `0.047228`
+  - `v029`: `0.020876`
+  - `v023`: `0.013008`
+- Conservative diagnostics:
+  - full: `0.135723`
+  - tail20: `0.124063`
+  - tail10: `0.117680`
+  - ts_fold5: `0.119955`
+  - composite: `0.123361`
+- Difference versus first submitted ensemble:
+  - Spearman: `0.907469`
+  - mean rank delta: `0.089917`
+- Interpretation: this supersedes `sub_calibrated_tail10_expanded_tuned.csv` as the current best second-submit candidate. The gain is small but improves all target recency diagnostics and further increases prediction diversity versus the first submission.
