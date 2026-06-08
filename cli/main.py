@@ -292,6 +292,168 @@ def drw_clean(
             console.print(f"    [red]{error}[/red]")
 
 
+@app.command("drw-ridge")
+def drw_ridge(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    top_k: int = typer.Option(140, "--top-k", help="Top target-correlation features to use"),
+    folds: int = typer.Option(5, "--folds", help="KFold splits without shuffle"),
+    alphas: str = typer.Option("1,10,100,1000,10000", "--alphas", help="Comma-separated Ridge alphas"),
+):
+    """Train a fast closed-form Ridge candidate for DRW and generate a submission."""
+    import json
+    import pickle
+    import time
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import pearsonr
+    from sklearn.model_selection import KFold
+
+    from kaggle_auto.workspace import get_workspace
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    train_path = workspace / config.data.train
+    test_path = workspace / config.data.test
+    target_col = config.data.target_column
+    alpha_values = [float(a.strip()) for a in alphas.split(",") if a.strip()]
+    if not alpha_values:
+        console.print("[red]Need at least one alpha.[/red]")
+        raise typer.Exit(1)
+
+    console.print("[yellow]Ranking DRW features by target correlation...[/yellow]")
+    train_all = pd.read_parquet(train_path)
+    test_columns = set(pd.read_parquet(test_path).columns)
+    raw_features = [
+        col for col in train_all.columns
+        if col != target_col and col in test_columns and train_all[col].nunique(dropna=False) > 1
+    ]
+    corr_to_target = train_all[raw_features].corrwith(train_all[target_col]).abs()
+    ranked = corr_to_target.replace([np.inf, -np.inf], np.nan).dropna().sort_values(ascending=False)
+    selected = ranked.head(min(top_k, len(ranked))).index.tolist()
+    public_diverse = [
+        "X344", "X598", "X385", "X603", "X674", "X415", "X345", "X137", "X174",
+        "X302", "X178", "X532", "X168", "X612", "bid_qty", "ask_qty", "buy_qty",
+        "sell_qty", "volume",
+    ]
+    for col in public_diverse:
+        if col in train_all.columns and col in test_columns and col not in selected:
+            selected.append(col)
+    console.print(f"  selected_features={len(selected)}")
+
+    train = train_all[selected + [target_col]]
+    del train_all
+    test = pd.read_parquet(test_path, columns=selected)
+    y = train[target_col].to_numpy(dtype="float64")
+    x = train[selected].to_numpy(dtype="float64")
+    x_test = test[selected].to_numpy(dtype="float64")
+    del train, test
+
+    def fit_predict_ridge(x_train, y_train, x_valid, x_target, alpha):
+        med = np.nanmedian(x_train, axis=0)
+        x_train = np.where(np.isnan(x_train), med, x_train)
+        x_valid = np.where(np.isnan(x_valid), med, x_valid)
+        x_target = np.where(np.isnan(x_target), med, x_target)
+        mu = x_train.mean(axis=0)
+        sigma = x_train.std(axis=0)
+        sigma[sigma == 0] = 1.0
+        x_train = (x_train - mu) / sigma
+        x_valid = (x_valid - mu) / sigma
+        x_target = (x_target - mu) / sigma
+        intercept = y_train.mean()
+        centered_y = y_train - intercept
+        system = x_train.T @ x_train
+        system.flat[:: system.shape[0] + 1] += alpha
+        coef = np.linalg.solve(system, x_train.T @ centered_y)
+        model_state = {
+            "median": med,
+            "mean": mu,
+            "std": sigma,
+            "coef": coef,
+            "intercept": intercept,
+            "alpha": alpha,
+        }
+        return x_valid @ coef + intercept, x_target @ coef + intercept, model_state
+
+    kfold = KFold(n_splits=folds, shuffle=False)
+    best = None
+    started_at = time.time()
+    for alpha in alpha_values:
+        oof = np.zeros(len(y), dtype="float32")
+        test_preds = np.zeros(len(x_test), dtype="float64")
+        fold_scores = []
+        fold_models = []
+        for fold, (train_idx, valid_idx) in enumerate(kfold.split(x), 1):
+            pred, test_pred, model_state = fit_predict_ridge(
+                x[train_idx], y[train_idx], x[valid_idx], x_test, alpha
+            )
+            oof[valid_idx] = pred.astype("float32")
+            test_preds += test_pred / folds
+            score = float(pearsonr(y[valid_idx], pred)[0])
+            fold_scores.append(score)
+            fold_models.append(model_state)
+            console.print(f"  alpha={alpha:g} fold={fold}/{folds} Pearson={score:.6f}")
+        oof_score = float(pearsonr(y, oof)[0])
+        console.print(f"[cyan]alpha={alpha:g} OOF Pearson={oof_score:.6f}[/cyan]")
+        if best is None or oof_score > best["score"]:
+            best = {
+                "alpha": alpha,
+                "score": oof_score,
+                "fold_scores": fold_scores,
+                "models": fold_models,
+                "oof": oof.copy(),
+                "test_preds": test_preds.astype("float32"),
+            }
+
+    assert best is not None
+    models_dir = workspace / "models"
+    version = 1
+    while (models_dir / f"v{version:03d}").exists():
+        version += 1
+    model_path = models_dir / f"v{version:03d}"
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    with open(model_path / "model.pkl", "wb") as f:
+        pickle.dump(best["models"], f)
+    np.save(model_path / "oof_preds.npy", best["oof"])
+    np.save(model_path / "test_preds.npy", best["test_preds"])
+    pd.DataFrame({
+        "feature": selected,
+        "target_corr": ranked.reindex(selected).fillna(0).values,
+    }).to_csv(model_path / "importance.csv", index=False)
+    (model_path / "cv_scores.json").write_text(json.dumps({
+        "fold_scores": best["fold_scores"],
+        "mean_score": best["score"],
+        "std_score": float(np.std(best["fold_scores"])),
+        "metric": "pearson",
+        "model_type": "ridge_closed_form_corr_features",
+        "features": selected,
+        "params": {
+            "alpha": best["alpha"],
+            "alphas": alpha_values,
+            "top_k": top_k,
+            "n_features": len(selected),
+            "cv_strategy": "kfold_no_shuffle",
+            "folds": folds,
+        },
+        "runtime_sec": time.time() - started_at,
+    }, indent=2), encoding="utf-8")
+
+    submitter = Submitter(workspace, config)
+    sub_path = submitter.generate_submission(best["test_preds"], model_version=f"v{version:03d}")
+    validation = submitter.validate(sub_path)
+    console.print(f"[green]Best Ridge OOF Pearson:[/green] {best['score']:.6f}")
+    console.print(f"  alpha: {best['alpha']:g}")
+    console.print(f"  Model: {model_path}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
+
+
 @app.command("drw-ensemble")
 def drw_ensemble(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
