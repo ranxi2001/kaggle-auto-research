@@ -297,6 +297,7 @@ def drw_ensemble(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
     models: str = typer.Option("v010,v011,v007,v003", "--models", help="Comma-separated model versions"),
     step: int = typer.Option(20, "--step", help="Weight grid denominator, e.g. 20 means 0.05 steps"),
+    method: str = typer.Option("grid", "--method", help="Weight search: grid|optimize"),
 ):
     """Build a simple OOF-optimized ensemble for DRW models."""
     import itertools
@@ -304,6 +305,7 @@ def drw_ensemble(
 
     import numpy as np
     import pandas as pd
+    from scipy.optimize import minimize
     from scipy.stats import pearsonr
 
     from kaggle_auto.workspace import get_workspace
@@ -342,22 +344,68 @@ def drw_ensemble(
     best = None
     n = len(loaded)
 
-    def compositions(total: int, parts: int):
-        if parts == 1:
-            yield (total,)
-            return
-        for i in range(total + 1):
-            for rest in compositions(total - i, parts - 1):
-                yield (i, *rest)
+    if method == "grid":
+        def compositions(total: int, parts: int):
+            if parts == 1:
+                yield (total,)
+                return
+            for i in range(total + 1):
+                for rest in compositions(total - i, parts - 1):
+                    yield (i, *rest)
 
-    for raw_weights in compositions(step, n):
-        if sum(raw_weights) == 0:
-            continue
-        weights = np.array(raw_weights, dtype=float) / step
-        blended = sum(weights[i] * loaded[i]["oof"] for i in range(n))
-        score = pearsonr(y, blended)[0]
-        if best is None or score > best["score"]:
-            best = {"score": float(score), "weights": weights}
+        for raw_weights in compositions(step, n):
+            if sum(raw_weights) == 0:
+                continue
+            weights = np.array(raw_weights, dtype=float) / step
+            blended = sum(weights[i] * loaded[i]["oof"] for i in range(n))
+            score = pearsonr(y, blended)[0]
+            if best is None or score > best["score"]:
+                best = {"score": float(score), "weights": weights}
+    elif method == "optimize":
+        y_centered = y - y.mean()
+        y_norm = np.linalg.norm(y_centered)
+        oof_matrix = np.column_stack([item["oof"].astype("float64") for item in loaded])
+
+        def corr(weights: np.ndarray) -> float:
+            blended = oof_matrix @ weights
+            centered = blended - blended.mean()
+            denom = np.linalg.norm(centered) * y_norm
+            if denom == 0:
+                return -1.0
+            return float(centered @ y_centered / denom)
+
+        def objective(weights: np.ndarray) -> float:
+            return -corr(weights)
+
+        starts = [np.ones(n, dtype=float) / n]
+        for i in range(n):
+            point = np.zeros(n, dtype=float)
+            point[i] = 1.0
+            starts.append(point)
+
+        grid_seed = np.array([item["score"] if item["score"] is not None else 0.0 for item in loaded], dtype=float)
+        grid_seed = np.maximum(grid_seed, 0.0)
+        if grid_seed.sum() > 0:
+            starts.append(grid_seed / grid_seed.sum())
+
+        bounds = [(0.0, 1.0)] * n
+        constraints = ({"type": "eq", "fun": lambda weights: float(weights.sum() - 1.0)},)
+        for start in starts:
+            result = minimize(
+                objective,
+                start,
+                method="SLSQP",
+                bounds=bounds,
+                constraints=constraints,
+                options={"maxiter": 1000, "ftol": 1e-12},
+            )
+            if result.success:
+                score = corr(result.x)
+                if best is None or score > best["score"]:
+                    best = {"score": score, "weights": result.x}
+    else:
+        console.print("[red]--method must be grid or optimize.[/red]")
+        raise typer.Exit(1)
 
     assert best is not None
     test_preds = sum(best["weights"][i] * loaded[i]["preds"] for i in range(n))

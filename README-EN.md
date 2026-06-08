@@ -74,8 +74,8 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 - Initial auto-feature baseline: CV R2 `-0.002859`
 - Clean feature selection + LightGBM: best single-model Pearson around `0.0724`
 - Public-notebook-style XGB time-slice: Pearson `0.053338`, but useful as an ensemble-diversity signal
-- Pearson OOF grid ensemble: Pearson `0.087508`
-- Current best local submission: `sub_ensemble_v010_v011_v007_v003_v015.csv`
+- Pearson OOF simplex ensemble: Pearson `0.087754`
+- Current best local submission: `sub_ensemble_v002_v003_v004_v005_v006_v007_v008_v009_v010_v011_v012_v015.csv`
 - Public leaderboard top is around `0.11 - 0.14`
 
 Conclusion: the toolchain can run end-to-end and improve, but the result is not yet competitive. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to close the missing high-numbered-feature gap from public notebooks, improve time-slice CV, and turn XGB/LGBM/Ridge blends into reusable recipes.
@@ -177,6 +177,7 @@ DRW Crypto research helpers:
 kar drw-clean drw-crypto --top-k 130 --n-estimators 1200 --learning-rate 0.015
 kar drw-public drw-crypto --model lgbm --folds 3
 kar drw-ensemble drw-crypto --models v010,v011,v007,v003
+kar drw-ensemble drw-crypto --models v002,v003,v004,v005,v006,v007,v008,v009,v010,v011,v012,v015 --method optimize
 ```
 
 ## Workspace Layout
