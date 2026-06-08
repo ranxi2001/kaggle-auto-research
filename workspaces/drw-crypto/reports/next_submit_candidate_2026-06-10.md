@@ -19,6 +19,14 @@ When the daily budget resets, submit the utility-selected conservative anchor bl
 
 Use `--force` because the candidate is intentionally not optimizing the original full OOF score. It is anchored against the best real LB submission and selected by a utility score that penalizes similarity to the known failed submission.
 
+The same file is also queued in `.state/submission_budget.json` as of 2026-06-09. After the daily budget resets, this shorter command should submit it:
+
+```powershell
+.\kar.cmd submit drw-crypto --flush
+```
+
+Before using `--flush`, run `.\kar.cmd submit drw-crypto --status` and confirm the reserve queue contains only `sub_anchor_blend_utility_scan.csv`.
+
 ## Candidate
 
 File:
