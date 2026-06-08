@@ -85,6 +85,19 @@ Prefer the conservative candidate unless deliberately testing the stronger `v032
 
 The v033 blend is slightly closer to the best anchor, but it gives up local composite. Keep it as a fallback only after the conservative candidate has been tested.
 
+## Risk Scan
+
+`sub_anchor_blend_risk_scan.csv` was generated to compare higher-alpha and lower-failed-direction alternatives. It is valid but not recommended over the current conservative candidate.
+
+| Candidate | Composite | Spearman to best anchor | Spearman to failed tail | Rank delta to anchor | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| conservative `alpha=0.21` | `0.129544` | `0.994191` | `0.938277` | `0.023247` | submit first |
+| conservative `alpha=0.22` | `0.129691` | `0.993600` | `0.939500` | `0.024383` | too little gain for more drift |
+| balanced_no_v032 `alpha=0.24` | `0.126893` | `0.997147` | `0.913455` | `0.016538` | safer but too weak |
+| low_failed `alpha=0.24` | `0.125755` | `0.998162` | `0.905323` | `0.013302` | safer but too weak |
+
+The lower-failed-direction groups are useful diagnostics, but their local composite drop is too large for the next submission. Keep the existing conservative candidate.
+
 ## After Submission
 
 Run:

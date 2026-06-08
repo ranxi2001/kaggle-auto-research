@@ -437,3 +437,24 @@
     - Spearman to failed tail submission: `0.934960`
     - mean rank delta to anchor: `0.020516`
 - Decision remains unchanged: submit `sub_anchor_blend_conservative.csv` first after budget reset. The corrected score is stronger than previously recorded while preserving the more conservative move away from the public-best anchor.
+
+## Anchor Blend Failed-Direction Risk Scan - 2026-06-09
+
+- Ran a focused risk scan with higher alpha and lower-failed-direction groups:
+  `kar drw-anchor-blend drw-crypto --groups conservative:v016+v017+v031+v032,low_failed:v021+v023+v017,balanced_no_v032:v016+v017+v021+v023,strong_core:v021+v023+v025,v021:v021,v023:v023 --alpha-grid 0.10,0.12,0.15,0.18,0.20,0.21,0.22,0.24 --min-spearman 0.993 --max-rank-delta 0.030 --output-tag anchor_blend_risk_scan`
+- Output: `sub_anchor_blend_risk_scan.csv`
+- Report: `reports/anchor_blend_risk_scan_anchor_blend_scan.csv`
+- Best by raw composite was the same conservative model group at `alpha=0.22`:
+  - composite: `0.129691`
+  - Spearman to best anchor: `0.993600`
+  - Spearman to failed tail submission: `0.939500`
+  - mean rank delta to anchor: `0.024383`
+- Current recommendation remains `sub_anchor_blend_conservative.csv` at `alpha=0.21`:
+  - composite: `0.129544`
+  - Spearman to best anchor: `0.994191`
+  - Spearman to failed tail submission: `0.938277`
+  - mean rank delta to anchor: `0.023247`
+- Safer low-failed-direction alternatives were too weak:
+  - `balanced_no_v032` at `alpha=0.24`: composite `0.126893`, Spearman to failed `0.913455`
+  - `low_failed` at `alpha=0.24`: composite `0.125755`, Spearman to failed `0.905323`
+- Decision: do not replace the next-submit candidate. The `alpha=0.22` gain is only `0.000147` composite while moving closer to the known failed submission and further from the best anchor.
