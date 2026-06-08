@@ -208,6 +208,7 @@ kar analyze <name>
 kar ensemble <name> --top 5
 kar leaderboard <name>
 kar leaderboard <name> --top -n 10
+kar sync-lb <name>
 kar submit <name> --status
 kar submit <name> --history
 kar submit <name> --dry-run -f submissions/sub_001.csv

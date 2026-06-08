@@ -326,3 +326,13 @@
 - Prediction mean/std: `0.000000 / 0.496348`
 - Prediction min/max: `-0.998667 / 0.998202`
 - Result: schema and distribution checks passed.
+
+## LB Sync - 2026-06-09
+
+- Added `kar sync-lb <workspace>` and ran `kar sync-lb drw-crypto`.
+- Wrote `reports/lb_sync.csv`.
+- Synced first Kaggle submission into local history:
+  - ref: `53486449`
+  - public LB: `0.08199`
+  - private score shown by Kaggle: `0.08268`
+  - status: `SubmissionStatus.COMPLETE`

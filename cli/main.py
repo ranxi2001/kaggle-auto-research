@@ -131,6 +131,104 @@ def leaderboard(
         raise typer.Exit(result.returncode)
 
 
+@app.command("sync-lb")
+def sync_lb(name: str = typer.Argument(..., help="Competition workspace name")):
+    """Sync Kaggle submission scores into local reports and history."""
+    import csv
+    import json
+    from datetime import datetime
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import ScoreTracker
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    slug = config.competition.name
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "kaggle",
+        "competitions",
+        "submissions",
+        slug,
+        "--csv",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        console.print("[red]Failed to fetch submissions from Kaggle.[/red]")
+        if result.stderr:
+            console.print(result.stderr)
+        raise typer.Exit(result.returncode)
+
+    rows = list(csv.DictReader(result.stdout.splitlines()))
+    report_rows = []
+    for row in rows:
+        report_rows.append({
+            "ref": row.get("ref", ""),
+            "fileName": row.get("fileName", ""),
+            "date": row.get("date", ""),
+            "description": row.get("description", ""),
+            "status": row.get("status", ""),
+            "publicScore": row.get("publicScore", ""),
+            "privateScore": row.get("privateScore", ""),
+        })
+
+    report_path = workspace / "reports" / "lb_sync.csv"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with report_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=["ref", "fileName", "date", "description", "status", "publicScore", "privateScore"],
+        )
+        writer.writeheader()
+        writer.writerows(report_rows)
+
+    tracker = ScoreTracker(workspace)
+    history = tracker.get_history()
+    updated = 0
+    by_file = {row["fileName"]: row for row in report_rows if row.get("fileName")}
+    for entry in history:
+        match = by_file.get(entry.get("file", ""))
+        if not match:
+            continue
+        public_score = match.get("publicScore")
+        if public_score not in (None, ""):
+            try:
+                entry["lb_score"] = float(public_score)
+                entry["kaggle_ref"] = match.get("ref", "")
+                entry["kaggle_status"] = match.get("status", "")
+                entry["kaggle_private_score"] = (
+                    float(match["privateScore"]) if match.get("privateScore") not in (None, "") else None
+                )
+                entry["lb_synced_at"] = datetime.now().isoformat()
+                updated += 1
+            except ValueError:
+                pass
+
+    if updated:
+        tracker.history_file.write_text(json.dumps(history, indent=2), encoding="utf-8")
+
+    table = Table(title=f"LB Sync: {name}")
+    table.add_column("ref")
+    table.add_column("file")
+    table.add_column("status")
+    table.add_column("public")
+    table.add_column("private")
+    for row in report_rows:
+        table.add_row(
+            row.get("ref", ""),
+            row.get("fileName", ""),
+            row.get("status", ""),
+            row.get("publicScore", ""),
+            row.get("privateScore", ""),
+        )
+    console.print(table)
+    console.print(f"  Report: {report_path}")
+    console.print(f"  History entries updated: {updated}")
+
+
 @app.command("drw-clean")
 def drw_clean(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
