@@ -232,6 +232,7 @@ kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
 kar drw-anchor-blend drw-crypto --output-tag anchor_blend_safe
 kar drw-anchor-blend drw-crypto --groups safe:v016+v017+v031+v032 --alpha-grid 0.15,0.18,0.19,0.20,0.21 --min-spearman 0.994 --max-rank-delta 0.025 --output-tag anchor_blend_conservative
 kar drw-anchor-blend drw-crypto --selection-metric utility --failed-threshold 0.935 --risk-penalty 0.60 --output-tag anchor_blend_utility_scan
+kar drw-compare-submissions drw-crypto --files sub_anchor_blend_utility_scan.csv,sub_anchor_blend_conservative.csv,sub_anti_failed_rank_beta020.csv
 ```
 
 ## Workspace Layout

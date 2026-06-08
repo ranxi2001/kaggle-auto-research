@@ -1243,6 +1243,140 @@ def drw_anchor_blend(
             console.print(f"    [red]{error}[/red]")
 
 
+@app.command("drw-compare-submissions")
+def drw_compare_submissions(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    files: str = typer.Option(..., "--files", help="Comma-separated submission CSV names or paths"),
+    output_tag: str = typer.Option("submission_compare", "--output-tag", help="Report filename tag"),
+):
+    """Compare DRW submission candidates by metadata, Spearman correlation, and rank movement."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import rankdata
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    submissions_dir = workspace / "submissions"
+    requested = [item.strip() for item in files.split(",") if item.strip()]
+    if len(requested) < 2:
+        console.print("[red]Need at least two submissions in --files.[/red]")
+        raise typer.Exit(1)
+
+    def resolve_submission(value: str) -> Path:
+        path = Path(value)
+        if path.is_absolute() and path.exists():
+            return path
+        candidates = [
+            workspace / value,
+            submissions_dir / value,
+            submissions_dir / Path(value).name,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        console.print(f"[red]Submission not found:[/red] {value}")
+        raise typer.Exit(1)
+
+    def rank_normalize(values: np.ndarray) -> np.ndarray:
+        ranks = rankdata(values, method="average").astype("float64")
+        return (ranks - 0.5) / len(ranks) * 2 - 1
+
+    sample = pd.read_csv(workspace / config.data.sample_submission)
+    loaded = []
+    for value in requested:
+        path = resolve_submission(value)
+        validation = Submitter(workspace, config).validate(path)
+        df = pd.read_csv(path)
+        pred = df[df.columns[1]].to_numpy(dtype="float64")
+        meta = {}
+        meta_path = path.with_suffix(".json")
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                meta = {}
+        scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
+        loaded.append({
+            "name": path.name,
+            "path": path,
+            "pred": pred,
+            "rank": rank_normalize(pred),
+            "valid": validation.is_valid,
+            "rows": len(df),
+            "id_match": bool((df[df.columns[0]].to_numpy() == sample[sample.columns[0]].to_numpy()).all()),
+            "missing": int(df[df.columns[1]].isna().sum()),
+            "std": float(np.std(pred)),
+            "mean": float(np.mean(pred)),
+            "min": float(np.min(pred)),
+            "max": float(np.max(pred)),
+            "composite": scores.get("composite"),
+            "utility": scores.get("utility"),
+            "spearman_to_anchor": meta.get("spearman_to_anchor"),
+            "spearman_to_failed": meta.get("spearman_to_failed"),
+            "rank_delta_to_anchor": meta.get("mean_rank_delta_to_anchor"),
+            "warning": meta.get("warning"),
+        })
+
+    summary_rows = []
+    for item in loaded:
+        summary_rows.append({
+            "file": item["name"],
+            "valid": item["valid"],
+            "rows": item["rows"],
+            "id_match": item["id_match"],
+            "missing": item["missing"],
+            "mean": item["mean"],
+            "std": item["std"],
+            "min": item["min"],
+            "max": item["max"],
+            "composite": item["composite"],
+            "utility": item["utility"],
+            "spearman_to_anchor": item["spearman_to_anchor"],
+            "spearman_to_failed": item["spearman_to_failed"],
+            "rank_delta_to_anchor": item["rank_delta_to_anchor"],
+            "warning": item["warning"],
+        })
+
+    pair_rows = []
+    for left_idx, left in enumerate(loaded):
+        for right in loaded[left_idx + 1:]:
+            pair_rows.append({
+                "left": left["name"],
+                "right": right["name"],
+                "spearman": float(np.corrcoef(left["rank"], right["rank"])[0, 1]),
+                "mean_rank_delta": float(np.mean(np.abs(left["rank"] - right["rank"])) / 2),
+            })
+
+    report_dir = workspace / "reports"
+    summary_path = report_dir / f"{output_tag}_summary.csv"
+    pair_path = report_dir / f"{output_tag}_pairs.csv"
+    pd.DataFrame(summary_rows).to_csv(summary_path, index=False)
+    pd.DataFrame(pair_rows).to_csv(pair_path, index=False)
+
+    table = Table(title=f"Submission Compare: {name}")
+    for column in ["file", "valid", "composite", "utility", "spear_anchor", "spear_failed", "rank_delta"]:
+        table.add_column(column)
+    for row in summary_rows:
+        table.add_row(
+            str(row["file"]),
+            "Y" if row["valid"] else "N",
+            "" if row["composite"] is None else f"{float(row['composite']):.6f}",
+            "" if row["utility"] is None else f"{float(row['utility']):.6f}",
+            "" if row["spearman_to_anchor"] is None else f"{float(row['spearman_to_anchor']):.6f}",
+            "" if row["spearman_to_failed"] is None else f"{float(row['spearman_to_failed']):.6f}",
+            "" if row["rank_delta_to_anchor"] is None else f"{float(row['rank_delta_to_anchor']):.6f}",
+        )
+    console.print(table)
+    console.print(f"  Summary: {summary_path}")
+    console.print(f"  Pairs: {pair_path}")
+
+
 @app.command("drw-public")
 def drw_public(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),

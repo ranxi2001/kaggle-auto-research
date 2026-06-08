@@ -118,6 +118,31 @@ It is a diagnostic fallback, not the first submission choice, because it has no 
 
 If the utility candidate does not improve LB, this anti-failed candidate can test whether the failed second submission direction is actively harmful. Do not submit it before the utility candidate.
 
+## Pre-submit Comparison
+
+Run this before the next real submission to verify the candidate set:
+
+```powershell
+.\kar.cmd drw-compare-submissions drw-crypto --files sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv,sub_calibrated_tail_cli_full.csv,sub_anchor_blend_utility_scan.csv,sub_anchor_blend_conservative.csv,sub_anti_failed_rank_beta020.csv --output-tag next_submit_compare
+```
+
+Current comparison output:
+
+| File | Valid | Composite | Utility | Spearman to anchor | Spearman to failed | Rank delta |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `sub_anchor_blend_utility_scan.csv` | `true` | `0.129080` | `0.129080` | `0.995783` | `0.934484` | `0.019854` |
+| `sub_anchor_blend_conservative.csv` | `true` | `0.129544` |  | `0.994191` | `0.938277` | `0.023247` |
+| `sub_anti_failed_rank_beta020.csv` | `true` |  |  | `0.996688` | `0.871446` | `0.017765` |
+
+Pairwise checks:
+
+| Pair | Spearman | Mean rank delta |
+| --- | ---: | ---: |
+| utility vs conservative | `0.999872` | `0.003400` |
+| utility vs anti-failed | `0.986599` | `0.035465` |
+| anchor vs utility | `0.995783` | `0.019854` |
+| failed tail vs utility | `0.934484` | `0.075861` |
+
 ## After Submission
 
 Run:
