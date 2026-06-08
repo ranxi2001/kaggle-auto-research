@@ -1468,7 +1468,13 @@ def submit(
         if meta_path.exists():
             try:
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))
-                cv_score = meta.get("oof_pearson") or meta.get("mean_score")
+                scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
+                cv_score = (
+                    meta.get("oof_pearson")
+                    or meta.get("mean_score")
+                    or meta.get("composite_score")
+                    or scores.get("composite")
+                )
                 versions = []
                 for item in meta.get("models", []):
                     if isinstance(item, dict):

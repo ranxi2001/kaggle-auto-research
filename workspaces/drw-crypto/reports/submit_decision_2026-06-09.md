@@ -21,6 +21,8 @@ Submit:
 
 Dry-run status: valid.
 
+Submit metadata: `kar submit` reads `scores.composite` from the adjacent JSON and will record `CV=0.123363` with model versions `v032,v028,v010,v017,v029,v023`.
+
 Do not submit older candidates unless deliberately running an ablation.
 
 ## Candidate Summary
