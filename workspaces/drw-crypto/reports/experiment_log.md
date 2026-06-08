@@ -162,3 +162,12 @@
   - bottom 1% overlap: `0.635384`
 - Interpretation: the current candidate is not a totally new signal; it is a conservative rank adjustment of the first submission. That is appropriate after the first submission showed OOF optimism, but it limits upside.
 - Single-model alternatives (`v017_single`, `v032_model`) differ more from the first submission, but carry higher score risk. The current KFold conservative ensemble remains the recommended second probe if using the last daily submission.
+
+## First-LB / KFold Candidate Mix Scan - 2026-06-09
+
+- Scanned linear mixes between the first submitted full-OOF optimized ensemble and the current KFold conservative candidate. Report: `reports/mix_firstlb_kfold_scan.csv`.
+- Objective: same conservative recency-weighted proxy (`0.35*ts_fold5 + 0.25*tail10 + 0.20*tail20 + 0.20*full`).
+- Best mix: `kfold_weight=1.0`, first-submission weight `0.0`.
+- Result: adding the first submitted blend monotonically worsens the conservative proxy, despite increasing full OOF.
+- Dry-run valid equivalent file: `sub_calibrated_mix_firstlb_kfold_100.csv`.
+- Interpretation: keep the current KFold conservative ensemble as the second-submit recommendation; do not average it back toward the first submitted blend.
