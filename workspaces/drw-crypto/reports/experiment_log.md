@@ -171,3 +171,26 @@
 - Result: adding the first submitted blend monotonically worsens the conservative proxy, despite increasing full OOF.
 - Dry-run valid equivalent file: `sub_calibrated_mix_firstlb_kfold_100.csv`.
 - Interpretation: keep the current KFold conservative ensemble as the second-submit recommendation; do not average it back toward the first submitted blend.
+
+## Manual Diverse Conservative Candidate - 2026-06-09
+
+- Tried a larger random diversity-constrained search, but the all-row scoring loop timed out before writing artifacts. This should be optimized before reuse.
+- Ran a manual diversity sweep instead. Report: `reports/manual_diverse_candidate_summary.csv`.
+- New recommended second-submit candidate: `sub_calibrated_manual_tail10_boost.csv`
+- Dry-run: valid
+- Weights:
+  - `v032`: `0.36`
+  - `v028`: `0.22`
+  - `v017`: `0.18`
+  - `v010`: `0.14`
+  - `v029`: `0.10`
+- Conservative diagnostics:
+  - full: `0.138370`
+  - tail20: `0.122587`
+  - tail10: `0.117011`
+  - ts_fold5: `0.118790`
+  - composite: `0.123021`
+- Difference versus first submitted ensemble:
+  - Spearman: `0.931755`
+  - mean rank delta: `0.076877`
+- Interpretation: this supersedes the KFold conservative ensemble as the best second-submit recommendation. It improves the conservative proxy (`0.123021` vs `0.122449`), improves tail10 and ts_fold5, and has more prediction diversity versus the first submission.
