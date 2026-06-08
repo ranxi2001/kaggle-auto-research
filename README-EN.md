@@ -101,10 +101,12 @@ This repository is using DRW Crypto Market Prediction as the first real tooling 
 - Public-notebook-style XGB time-slice: Pearson `0.053338`, but useful as an ensemble-diversity signal
 - Closed-form Ridge on top-correlation features: TimeSeriesSplit Pearson `0.143261`
 - Pearson OOF rank-normalized simplex ensemble: common-valid-OOF Pearson `0.149746`
-- Current best local submission: `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`
+- Current best Kaggle submission: `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`, public LB `0.08199`
+- Failed recency-proxy submission: `sub_calibrated_tail_cli_full.csv`, public LB `0.07184`
+- Next offline candidate: `sub_anchor_blend_conservative.csv`, a small rank blend around the best submitted anchor
 - Public leaderboard top is around `0.11 - 0.14`
 
-Conclusion: the toolchain can run end-to-end and improve; the current local OOF score is now near the strong public-leaderboard range. The current local best dry-run validates successfully and has not been submitted to Kaggle. The next step is to use a small number of real submissions to validate CV/LB consistency and keep turning Ridge/XGB/LGBM blends into reusable recipes.
+Conclusion: the toolchain can run end-to-end and improve, but DRW exposed a clear CV/LB gap. The next submission should be anchor-calibrated against the best real LB result instead of blindly maximizing local tail proxies.
 
 ## Tooling Gaps Exposed By The DRW Run
 
@@ -117,6 +119,7 @@ The recent DRW Crypto work showed that model code was not the main bottleneck. T
 | experiment registry | Comparing runs currently requires scanning `models/vNNN` and metadata files. | `kar experiments` / immutable run registry |
 | submission metadata | Manual file submissions still need CV, model versions, and ensemble weights. | normalized submission `.json` files |
 | LB sync | Kaggle scores should be written back into local history after submission. | `kar sync-lb <workspace>` |
+| LB-anchor calibration | Once real LB feedback exists, next candidates should stay close to the best submitted anchor and avoid known failed directions. | `kar drw-anchor-blend <workspace>` |
 | notebook miner | Public feature lists, CV schemes, and ensembles should become structured ideas. | `kar notebooks mine` |
 | recipe system | Commands like `drw-ridge` should graduate from hardcoded scripts into templates. | `kar run --template crypto/low_signal_feature_select` |
 | agent-friendly output | Long tables and styled output are not stable machine interfaces. | global `--json` + stable exit codes |
@@ -226,6 +229,8 @@ kar drw-public drw-crypto --model lgbm --folds 3
 kar drw-ensemble drw-crypto --models v010,v011,v007,v003
 kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018,v019,v020,v021,v022,v023,v024,v025,v026 --method optimize --transform ranknorm
 kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
+kar drw-anchor-blend drw-crypto --output-tag anchor_blend_safe
+kar drw-anchor-blend drw-crypto --groups safe:v016+v017+v031+v032 --alpha-grid 0.15,0.18,0.19,0.20,0.21 --min-spearman 0.994 --max-rank-delta 0.025 --output-tag anchor_blend_conservative
 ```
 
 ## Workspace Layout

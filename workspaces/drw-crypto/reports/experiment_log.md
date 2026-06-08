@@ -346,3 +346,30 @@
 - Budget after submission: `2/2` used, `0` remaining.
 - Synced with `kar sync-lb drw-crypto`; `reports/lb_sync.csv` and local submission history now contain both Kaggle refs.
 - Interpretation: the recency-weighted composite (`0.123363`) did not improve public LB versus the first submission (`0.08199`). Keep the first submission as current Kaggle best and avoid re-submitting lower-confidence variants of this tail CLI candidate.
+
+## Anchor Blend Candidate Search - 2026-06-09
+
+- Added `kar drw-anchor-blend`, a DRW helper that uses the best real LB submission as an anchor and scans small rank blends against selected model groups.
+- Rationale: the tail proxy submission stayed highly correlated with the first submission (`Spearman=0.908233`) but still reduced public LB from `0.08199` to `0.07184`; the next candidate should make a much smaller move from the known-good anchor.
+- Generated two valid candidates:
+  - `sub_anchor_blend_safe.csv`
+    - group: `v032`
+    - alpha: `0.21`
+    - composite: `0.125443`
+    - Spearman to best anchor: `0.991515`
+    - Spearman to failed tail submission: `0.948163`
+    - mean rank delta to anchor: `0.028320`
+  - `sub_anchor_blend_conservative.csv`
+    - group: `v016+v017+v031+v032`
+    - alpha: `0.21`
+    - composite: `0.125011`
+    - Spearman to best anchor: `0.994191`
+    - Spearman to failed tail submission: `0.938277`
+    - mean rank delta to anchor: `0.023247`
+- Both candidates passed schema checks against `sample_submission.csv`:
+  - rows: `538150`
+  - columns: `ID,prediction`
+  - ID order match: `true`
+  - missing predictions: `0`
+  - duplicate IDs: `0`
+- Decision: recommend `sub_anchor_blend_conservative.csv` for the next available submission because it is closer to the current public-LB best and further from the failed tail direction. Use `sub_anchor_blend_safe.csv` only if deliberately accepting higher movement toward the `v032` tail signal.

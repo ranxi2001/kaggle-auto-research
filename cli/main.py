@@ -953,6 +953,230 @@ def drw_tail_ensemble(
             console.print(f"    [red]{error}[/red]")
 
 
+@app.command("drw-anchor-blend")
+def drw_anchor_blend(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    anchor_file: str = typer.Option(
+        "sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv",
+        "--anchor-file",
+        help="Submitted CSV to use as the external LB anchor",
+    ),
+    failed_file: str = typer.Option(
+        "sub_calibrated_tail_cli_full.csv",
+        "--failed-file",
+        help="Known underperforming submission CSV used as a negative reference",
+    ),
+    anchor_models: str = typer.Option(
+        "v005,v010,v012,v015,v017,v018,v019,v020,v021,v022,v023,v024,v025,v026",
+        "--anchor-models",
+        help="Comma-separated models used to approximate anchor OOF",
+    ),
+    groups: str = typer.Option(
+        "safe:v016+v017+v031+v032,v032:v032,v017:v017,v016:v016",
+        "--groups",
+        help="Candidate groups as name:v001+v002,name2:v003",
+    ),
+    alpha_grid: str = typer.Option(
+        "0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.21",
+        "--alpha-grid",
+        help="Comma-separated blend weights applied to candidate groups",
+    ),
+    min_spearman: float = typer.Option(0.99, "--min-spearman", help="Minimum Spearman correlation to anchor"),
+    max_rank_delta: float = typer.Option(0.035, "--max-rank-delta", help="Maximum mean absolute rank delta to anchor"),
+    output_tag: str = typer.Option("anchor_blend", "--output-tag", help="Submission filename tag"),
+):
+    """Build a conservative DRW candidate by small rank blends around a submitted LB anchor."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import pearsonr, rankdata
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    submissions_dir = workspace / "submissions"
+    anchor_path = submissions_dir / anchor_file
+    failed_path = submissions_dir / failed_file
+    if not anchor_path.exists():
+        console.print(f"[red]Missing anchor submission:[/red] {anchor_path}")
+        raise typer.Exit(1)
+
+    def rank_normalize(values: np.ndarray) -> np.ndarray:
+        ranks = rankdata(values, method="average").astype("float32")
+        return ((ranks - 0.5) / len(ranks) * 2 - 1).astype("float32")
+
+    def parse_versions(text: str) -> list[str]:
+        return [item.strip() for item in text.split(",") if item.strip()]
+
+    def load_rank_pair(version: str) -> tuple[np.ndarray, np.ndarray]:
+        model_dir = workspace / "models" / version
+        oof_path = model_dir / "oof_preds.npy"
+        test_path = model_dir / "test_preds.npy"
+        if not (oof_path.exists() and test_path.exists()):
+            console.print(f"[red]Missing artifacts for {version}[/red]")
+            raise typer.Exit(1)
+        oof = np.load(oof_path)
+        test = np.load(test_path)
+        if len(oof) != len(y):
+            console.print(f"[red]OOF length mismatch for {version}: {len(oof)} != {len(y)}[/red]")
+            raise typer.Exit(1)
+        return rank_normalize(oof), rank_normalize(test)
+
+    def parse_groups(text: str) -> dict[str, list[str]]:
+        parsed = {}
+        for chunk in [part.strip() for part in text.split(",") if part.strip()]:
+            if ":" not in chunk:
+                console.print(f"[red]Invalid group spec:[/red] {chunk}")
+                raise typer.Exit(1)
+            group_name, version_text = chunk.split(":", 1)
+            versions = [item.strip() for item in version_text.split("+") if item.strip()]
+            if not versions:
+                console.print(f"[red]Group has no models:[/red] {chunk}")
+                raise typer.Exit(1)
+            parsed[group_name.strip()] = versions
+        return parsed
+
+    y = pd.read_parquet(workspace / config.data.train, columns=[config.data.target_column])[
+        config.data.target_column
+    ].to_numpy(dtype="float32")
+    anchor_preds = pd.read_csv(anchor_path)["prediction"].to_numpy(dtype="float32")
+    anchor_rank = rank_normalize(anchor_preds)
+    failed_rank = None
+    if failed_path.exists():
+        failed_rank = rank_normalize(pd.read_csv(failed_path)["prediction"].to_numpy(dtype="float32"))
+
+    cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+
+    def cached(version: str) -> tuple[np.ndarray, np.ndarray]:
+        if version not in cache:
+            cache[version] = load_rank_pair(version)
+        return cache[version]
+
+    anchor_oofs = []
+    for version in parse_versions(anchor_models):
+        oof, _ = cached(version)
+        anchor_oofs.append(oof)
+    anchor_oof = np.mean(anchor_oofs, axis=0).astype("float32")
+
+    group_specs = parse_groups(groups)
+    alphas = [float(item.strip()) for item in alpha_grid.split(",") if item.strip()]
+    n_rows = len(y)
+    segments = {
+        "full": (0, n_rows),
+        "tail20": (int(n_rows * 0.8), n_rows),
+        "tail10": (int(n_rows * 0.9), n_rows),
+        "tail5": (int(n_rows * 0.95), n_rows),
+    }
+
+    def corr_slice(preds: np.ndarray, start: int, end: int) -> float:
+        pred_slice = preds[start:end]
+        target_slice = y[start:end]
+        mask = np.isfinite(pred_slice)
+        return float(pearsonr(target_slice[mask], pred_slice[mask])[0])
+
+    rows = []
+    for group_name, versions in group_specs.items():
+        group_oofs = []
+        group_tests = []
+        for version in versions:
+            oof, test = cached(version)
+            group_oofs.append(oof)
+            group_tests.append(test)
+        group_oof = np.mean(group_oofs, axis=0).astype("float32")
+        group_test = np.mean(group_tests, axis=0).astype("float32")
+
+        for alpha in alphas:
+            candidate_oof = ((1 - alpha) * anchor_oof + alpha * group_oof).astype("float32")
+            candidate_test = ((1 - alpha) * anchor_rank + alpha * group_test).astype("float32")
+            candidate_rank = rank_normalize(candidate_test)
+            scores = {key: corr_slice(candidate_oof, start, end) for key, (start, end) in segments.items()}
+            scores["ts_fold5"] = scores["tail20"]
+            composite = (
+                0.45 * scores["full"]
+                + 0.20 * scores["tail20"]
+                + 0.15 * scores["tail10"]
+                + 0.10 * scores["tail5"]
+                + 0.10 * scores["ts_fold5"]
+            )
+            spearman_to_anchor = float(np.corrcoef(candidate_rank, anchor_rank)[0, 1])
+            mean_rank_delta = float(np.mean(np.abs(candidate_rank - anchor_rank)) / 2)
+            spearman_to_failed = None
+            if failed_rank is not None:
+                spearman_to_failed = float(np.corrcoef(candidate_rank, failed_rank)[0, 1])
+            rows.append({
+                "group": group_name,
+                "models": "+".join(versions),
+                "alpha": alpha,
+                **scores,
+                "composite": float(composite),
+                "spearman_to_anchor": spearman_to_anchor,
+                "spearman_to_failed": spearman_to_failed,
+                "mean_rank_delta_to_anchor": mean_rank_delta,
+            })
+
+    report = pd.DataFrame(rows).sort_values("composite", ascending=False)
+    safe = report[
+        (report["spearman_to_anchor"] >= min_spearman)
+        & (report["mean_rank_delta_to_anchor"] <= max_rank_delta)
+    ]
+    if safe.empty:
+        console.print("[red]No candidate passed anchor safety constraints.[/red]")
+        report_path = workspace / "reports" / f"{output_tag}_anchor_blend_scan.csv"
+        report.to_csv(report_path, index=False)
+        console.print(f"  Report: {report_path}")
+        raise typer.Exit(1)
+
+    best = safe.sort_values(["composite", "spearman_to_anchor"], ascending=[False, False]).iloc[0].to_dict()
+    best_versions = group_specs[str(best["group"])]
+    best_group_test = np.mean([cached(version)[1] for version in best_versions], axis=0).astype("float32")
+    final_test = ((1 - best["alpha"]) * anchor_rank + best["alpha"] * best_group_test).astype("float32")
+
+    sample = pd.read_csv(workspace / config.data.sample_submission)
+    sample[sample.columns[1]] = final_test
+    sub_path = submissions_dir / f"sub_{output_tag}.csv"
+    sample.to_csv(sub_path, index=False)
+
+    meta = {
+        "candidate": output_tag,
+        "anchor_file": anchor_file,
+        "failed_reference_file": failed_file if failed_path.exists() else None,
+        "group": best["group"],
+        "models": best_versions,
+        "alpha": float(best["alpha"]),
+        "scores": {
+            key: float(best[key])
+            for key in ["full", "tail20", "tail10", "tail5", "ts_fold5", "composite"]
+        },
+        "spearman_to_anchor": float(best["spearman_to_anchor"]),
+        "spearman_to_failed": None if pd.isna(best["spearman_to_failed"]) else float(best["spearman_to_failed"]),
+        "mean_rank_delta_to_anchor": float(best["mean_rank_delta_to_anchor"]),
+        "constraints": {
+            "min_spearman": min_spearman,
+            "max_rank_delta": max_rank_delta,
+        },
+        "submission": sub_path.name,
+    }
+    sub_path.with_suffix(".json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    report_path = workspace / "reports" / f"{output_tag}_anchor_blend_scan.csv"
+    report.to_csv(report_path, index=False)
+
+    validation = Submitter(workspace, config).validate(sub_path)
+    console.print(f"[green]Anchor blend composite:[/green] {best['composite']:.6f}")
+    console.print(f"  Group: {best['group']} alpha={float(best['alpha']):.3f}")
+    console.print(f"  Spearman to anchor: {float(best['spearman_to_anchor']):.6f}")
+    console.print(f"  Submission: {sub_path}")
+    console.print(f"  Report: {report_path}")
+    console.print(f"  Valid: {'Yes' if validation.is_valid else 'No'}")
+    if not validation.is_valid:
+        for error in validation.errors:
+            console.print(f"    [red]{error}[/red]")
+
+
 @app.command("drw-public")
 def drw_public(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
