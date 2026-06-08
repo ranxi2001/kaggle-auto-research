@@ -194,3 +194,12 @@
   - Spearman: `0.931755`
   - mean rank delta: `0.076877`
 - Interpretation: this supersedes the KFold conservative ensemble as the best second-submit recommendation. It improves the conservative proxy (`0.123021` vs `0.122449`), improves tail10 and ts_fold5, and has more prediction diversity versus the first submission.
+
+## Tail10 Boost Tuning Attempt - 2026-06-09
+
+- Tried two local weight tuning methods around `sub_calibrated_manual_tail10_boost.csv`:
+  - bounded 0.02 grid search
+  - coordinate pairwise weight transfer search
+- Both timed out because each evaluation recomputed full-row rank/correlation diagnostics. No new artifact was produced.
+- Engineering note: future tuning should precompute segment-centered vectors and approximate rank deltas, or optimize on sampled rows before full validation.
+- Decision: keep `sub_calibrated_manual_tail10_boost.csv` as the current best second-submit candidate. Its existing dry-run is valid and its conservative metrics remain the strongest completed evidence.
