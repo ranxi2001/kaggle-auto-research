@@ -622,3 +622,24 @@
   - model-backed first choice: `sub_anchor_blend_micro_scan.csv`
   - diagnostic public-feedback fallback: `sub_anti_failed_rank_w100_040.csv` or `sub_anti_failed_rank_beta100.csv`
 - Rationale: geometry scoring still ranks the micro anchor blend first among unsubmitted candidates because it has a local utility score and stays closer to the public-best anchor than the failed third submission. Dual anti-failed variants are better probes of bad public directions but lack local validation.
+
+## Low-Failed Model Pool Probe - 2026-06-10
+
+- Audited model-level geometry across `models/v001` through `models/v033`.
+- Report: `reports/model_geometry_audit.csv`
+- Key finding:
+  - `v032` has the highest local composite (`0.130344`) but is strongly aligned with the failed tail submission (`0.946610` Spearman), so it is risky as a primary exploration direction.
+  - `v016`, `v017`, `v021`, and `v025` offer better failed-direction separation while keeping useful local signal.
+- Generated a small grid over low-failed model pools.
+- Report: `reports/low_failed_pool_grid.csv`
+- Candidate: `sub_low_failed_pool_grid.csv`
+  - selected blend: equal weights on `v016`, `v017`, `v021`
+  - local composite: `0.128676`
+  - Spearman to first anchor: `0.911003`
+  - max Spearman to failed submissions: `0.939423`
+  - mean rank delta to anchor: `0.090004`
+  - dry-run status: valid
+- Geometry comparison report: `reports/next_with_low_failed_pool_score.csv`
+- Decision:
+  - Keep `sub_anchor_blend_micro_scan.csv` as the conservative next submission.
+  - Keep `sub_low_failed_pool_grid.csv` as an exploratory candidate if we decide the next Kaggle budget should test a larger, lower-failed geometry move.

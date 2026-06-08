@@ -47,6 +47,15 @@ After adding third-submission geometry scoring, `sub_anchor_blend_micro_scan.csv
 
 The dual anti-failed family is useful as a diagnostic probe, but it has no local score and is still highly correlated with the third submission. Keep `sub_anchor_blend_micro_scan.csv` first unless explicitly choosing a public-feedback-only experiment.
 
+Model geometry audit added one more exploratory candidate:
+
+| Candidate | Role | Local composite | Anchor Spearman | Max failed Spearman | Rank delta | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| `sub_anchor_blend_micro_scan.csv` | conservative next submit | `0.128042` | `0.998170` | `0.999508` | `0.013142` | submit first if optimizing for safety |
+| `sub_low_failed_pool_grid.csv` | exploratory low-failed pool | `0.128676` | `0.911003` | `0.939423` | `0.090004` | submit only if deliberately testing a larger geometry move |
+
+`sub_low_failed_pool_grid.csv` blends `v016`, `v017`, and `v021` equally. It has better local composite than the micro anchor blend and is much less tied to the failed utility submission, but it moves far from the first public-best anchor. Treat it as an exploration branch, not the default next submission.
+
 ## Candidate
 
 File:
