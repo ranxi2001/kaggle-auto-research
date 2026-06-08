@@ -8,6 +8,15 @@
   `sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`
 - Validation: dry-run valid
 - Kaggle submission status: not submitted
+- Submission audit:
+  - Shape: `538150 x 2`
+  - Columns: `ID,prediction`
+  - Missing values: none
+  - Local budget before submission: `2/2`
+  - Kaggle submission history before submission: none
+- Public leaderboard reference at audit time:
+  - Rank 1 score: `0.13959`
+  - Rank 5 score: `0.11116`
 
 ## Strong Components
 
@@ -37,3 +46,5 @@
 - Public notebooks use ordinary `scipy.stats.pearsonr`; no local train/test weight column exists.
 - The workspace metric has been corrected to `pearson`; `weighted_pearson` remains only as a compatibility alias.
 - Current best has not been leaderboard-calibrated. A real Kaggle submission is the next high-value validation step.
+- Candidate calibration command:
+  `kar submit drw-crypto --file submissions/sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv`
