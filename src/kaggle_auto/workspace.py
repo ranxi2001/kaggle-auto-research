@@ -54,7 +54,7 @@ def init_workspace(
 
     metric_defaults = {
         "tabular": ("rmse", "minimize"),
-        "crypto": ("weighted_pearson", "maximize"),
+        "crypto": ("pearson", "maximize"),
         "llm": ("log_loss", "minimize"),
     }
     default_metric, default_direction = metric_defaults.get(

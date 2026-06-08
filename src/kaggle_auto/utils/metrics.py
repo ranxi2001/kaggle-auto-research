@@ -44,10 +44,15 @@ def f1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return f1_score(y_true, y_pred, average="macro")
 
 
-def weighted_pearson(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    """Weighted Pearson correlation (common in crypto competitions)."""
+def pearson(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Pearson correlation."""
     correlation = np.corrcoef(y_true, y_pred)[0, 1]
     return correlation if not np.isnan(correlation) else 0.0
+
+
+def weighted_pearson(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Backward-compatible alias for Pearson when no sample weights are available."""
+    return pearson(y_true, y_pred)
 
 
 METRICS = {
@@ -59,6 +64,7 @@ METRICS = {
     "log_loss": (logloss, "minimize"),
     "logloss": (logloss, "minimize"),
     "f1": (f1, "maximize"),
+    "pearson": (pearson, "maximize"),
     "weighted_pearson": (weighted_pearson, "maximize"),
     "r2": (r2_score, "maximize"),
 }

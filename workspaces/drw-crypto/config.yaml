@@ -1,6 +1,6 @@
 competition:
   deadline: '2025-07-25'
-  metric: weighted_pearson
+  metric: pearson
   metric_direction: maximize
   name: drw-crypto-market-prediction
   type: crypto
