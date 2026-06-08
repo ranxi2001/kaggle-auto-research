@@ -511,3 +511,23 @@
   - tail5: `0.176603`
   - composite: `0.128910`
 - Decision: do not promote recency-weighted Ridge into a DRW CLI command yet. The tested time-decay weighting does not add useful signal and remains below the current next-submit utility candidate (`0.129080` composite).
+
+## Anti-Failed Extrapolation Probe - 2026-06-09
+
+- Tested direct public-feedback geometry using the two real submissions:
+  - best anchor public LB: `0.08199`
+  - failed tail public LB: `0.07184`
+- Probe formula:
+  `rank(first + beta * (first - failed_tail))`
+- Report: `reports/anti_failed_extrapolation_probe.csv`
+- Generated diagnostic fallback: `sub_anti_failed_rank_beta020.csv`
+- Selected diagnostic beta:
+  - mode: `rank`
+  - beta: `0.20`
+  - Spearman to best anchor: `0.996688`
+  - Spearman to failed tail submission: `0.871446`
+  - Spearman to utility candidate: `0.986599`
+  - mean rank delta to anchor: `0.017765`
+  - prediction mean/std: `0.000000 / 0.577350`
+- Dry-run status: valid.
+- Decision: keep `sub_anchor_blend_utility_scan.csv` as the first next submission. The anti-failed extrapolation has no OOF score and is directly public-feedback-derived, so it is only a diagnostic fallback if the utility candidate fails to improve LB.

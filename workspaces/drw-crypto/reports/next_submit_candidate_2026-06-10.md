@@ -101,6 +101,23 @@ The v033 blend is slightly closer to the best anchor, but it gives up local comp
 
 The lower-failed-direction groups are useful diagnostics, but their local composite drop is too large for the next submission. Keep the existing conservative candidate.
 
+## Diagnostic Fallback
+
+`sub_anti_failed_rank_beta020.csv` was generated from the two real LB submissions:
+
+```text
+rank(first + 0.20 * (first - failed_tail))
+```
+
+It is a diagnostic fallback, not the first submission choice, because it has no OOF score and directly uses public-LB feedback geometry.
+
+| File | Spearman to best anchor | Spearman to failed tail | Spearman to utility candidate | Rank delta to anchor | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `sub_anchor_blend_utility_scan.csv` | `0.995783` | `0.934484` | `1.000000` | `0.019854` | submit first |
+| `sub_anti_failed_rank_beta020.csv` | `0.996688` | `0.871446` | `0.986599` | `0.017765` | diagnostic fallback only |
+
+If the utility candidate does not improve LB, this anti-failed candidate can test whether the failed second submission direction is actively harmful. Do not submit it before the utility candidate.
+
 ## After Submission
 
 Run:
