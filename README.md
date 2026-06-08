@@ -228,6 +228,7 @@ kar drw-ensemble drw-crypto --models v005,v010,v012,v015,v017,v018,v019,v020,v02
 kar drw-tail-ensemble drw-crypto --samples 12000 --seed 47 --output-tag tail_cli
 kar drw-anchor-blend drw-crypto --selection-metric utility --failed-threshold 0.935 --risk-penalty 0.60 --output-tag anchor_blend_utility_scan
 kar drw-anti-failed drw-crypto --beta-grid 0.04,0.06,0.08,0.10,0.12,0.15
+kar drw-score-candidates drw-crypto --output-tag candidate_geometry_score
 kar drw-compare-submissions drw-crypto --files sub_anchor_blend_utility_scan.csv,sub_anti_failed_rank_beta100.csv
 ```
 

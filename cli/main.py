@@ -1393,6 +1393,166 @@ def drw_compare_submissions(
     console.print(f"  Pairs: {pair_path}")
 
 
+@app.command("drw-score-candidates")
+def drw_score_candidates(
+    name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
+    files: str = typer.Option(
+        "",
+        "--files",
+        help="Comma-separated candidate CSV names. Defaults to recent submissions plus known generated candidates.",
+    ),
+    anchor_file: str = typer.Option(
+        "sub_ensemble_ranknorm_v005_v010_v012_v015_v017_v018_v019_v020_v021_v022_v023_v024_v025_v026.csv",
+        "--anchor-file",
+        help="Best real-LB submission used as the positive anchor",
+    ),
+    failed_files: str = typer.Option(
+        "sub_calibrated_tail_cli_full.csv,sub_anchor_blend_utility_scan.csv",
+        "--failed-files",
+        help="Comma-separated real submissions that underperformed and should be treated as negative directions",
+    ),
+    output_tag: str = typer.Option("candidate_geometry_score", "--output-tag", help="Report filename tag"),
+):
+    """Score DRW candidates against real submission geometry and local metadata."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import rankdata
+
+    from kaggle_auto.config import load_config
+    from kaggle_auto.submission import Submitter
+    from kaggle_auto.workspace import get_workspace
+
+    workspace = get_workspace(name)
+    config = load_config(workspace)
+    submissions_dir = workspace / "submissions"
+
+    def resolve_submission(value: str) -> Path:
+        path = Path(value)
+        candidates = [
+            path if path.is_absolute() else workspace / path,
+            submissions_dir / value,
+            submissions_dir / Path(value).name,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        console.print(f"[red]Submission not found:[/red] {value}")
+        raise typer.Exit(1)
+
+    def rank_normalize(values: np.ndarray) -> np.ndarray:
+        ranks = rankdata(values, method="average").astype("float64")
+        return (ranks - 0.5) / len(ranks) * 2 - 1
+
+    def read_pred(path: Path) -> tuple[np.ndarray, np.ndarray]:
+        df = pd.read_csv(path)
+        return df.iloc[:, 0].to_numpy(), df.iloc[:, 1].to_numpy(dtype="float64")
+
+    def read_meta_score(path: Path) -> tuple[float | None, str | None]:
+        meta_path = path.with_suffix(".json")
+        if not meta_path.exists():
+            return None, None
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception:
+            return None, None
+        scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
+        for source, value in [
+            ("scores.utility", scores.get("utility")),
+            ("scores.composite", scores.get("composite")),
+            ("oof_pearson", meta.get("oof_pearson")),
+            ("mean_score", meta.get("mean_score")),
+        ]:
+            if value is not None:
+                return float(value), source
+        return None, None
+
+    anchor_path = resolve_submission(anchor_file)
+    failed_paths = [resolve_submission(item.strip()) for item in failed_files.split(",") if item.strip()]
+    anchor_ids, anchor_pred = read_pred(anchor_path)
+    anchor_rank = rank_normalize(anchor_pred)
+    failed_refs = []
+    for failed_path in failed_paths:
+        ids, pred = read_pred(failed_path)
+        if not np.array_equal(anchor_ids, ids):
+            console.print(f"[red]ID order mismatch for failed reference:[/red] {failed_path.name}")
+            raise typer.Exit(1)
+        failed_refs.append((failed_path.name, rank_normalize(pred)))
+
+    if files:
+        candidate_paths = [resolve_submission(item.strip()) for item in files.split(",") if item.strip()]
+    else:
+        patterns = [
+            "sub_anchor_blend_*.csv",
+            "sub_anti_failed_rank_beta*.csv",
+            "sub_calibrated_*.csv",
+            "sub_ensemble_ranknorm_*.csv",
+        ]
+        seen = {}
+        for pattern in patterns:
+            for path in submissions_dir.glob(pattern):
+                seen[path.name] = path
+        candidate_paths = sorted(seen.values(), key=lambda p: p.stat().st_mtime, reverse=True)
+
+    validator = Submitter(workspace, config)
+    rows = []
+    for path in candidate_paths:
+        ids, pred = read_pred(path)
+        valid = bool(np.array_equal(anchor_ids, ids))
+        validation = validator.validate(path) if valid else None
+        rank = rank_normalize(pred)
+        local_score, score_source = read_meta_score(path)
+        spearman_anchor = float(np.corrcoef(anchor_rank, rank)[0, 1])
+        rank_delta_anchor = float(np.mean(np.abs(anchor_rank - rank)) / 2)
+        failed_spearmans = {
+            f"spearman_to_{Path(name).stem[:24]}": float(np.corrcoef(failed_rank, rank)[0, 1])
+            for name, failed_rank in failed_refs
+        }
+        max_failed = max(failed_spearmans.values()) if failed_spearmans else 0.0
+        mean_failed = float(np.mean(list(failed_spearmans.values()))) if failed_spearmans else 0.0
+        local_bonus = 0.0 if local_score is None else max(0.0, min(1.0, (local_score - 0.123) / 0.030))
+        geometry_score = (
+            0.50 * spearman_anchor
+            + 0.25 * (1.0 - max_failed)
+            + 0.15 * (1.0 - rank_delta_anchor)
+            + 0.10 * local_bonus
+        )
+        rows.append({
+            "file": path.name,
+            "valid": valid and bool(validation and validation.is_valid),
+            "rows": len(pred),
+            "local_score": local_score,
+            "score_source": score_source,
+            "spearman_to_anchor": spearman_anchor,
+            "max_spearman_to_failed": max_failed,
+            "mean_spearman_to_failed": mean_failed,
+            "rank_delta_to_anchor": rank_delta_anchor,
+            "local_bonus": local_bonus,
+            "geometry_score": float(geometry_score),
+            **failed_spearmans,
+        })
+
+    report = pd.DataFrame(rows).sort_values("geometry_score", ascending=False)
+    report_path = workspace / "reports" / f"{output_tag}.csv"
+    report.to_csv(report_path, index=False)
+
+    table = Table(title=f"Candidate Geometry Score: {name}")
+    for column in ["file", "local", "anchor", "max_failed", "rank_delta", "score"]:
+        table.add_column(column)
+    for _, row in report.head(12).iterrows():
+        table.add_row(
+            str(row["file"]),
+            "" if pd.isna(row["local_score"]) else f"{float(row['local_score']):.6f}",
+            f"{float(row['spearman_to_anchor']):.6f}",
+            f"{float(row['max_spearman_to_failed']):.6f}",
+            f"{float(row['rank_delta_to_anchor']):.6f}",
+            f"{float(row['geometry_score']):.6f}",
+        )
+    console.print(table)
+    console.print(f"  Report: {report_path}")
+
+
 @app.command("drw-anti-failed")
 def drw_anti_failed(
     name: str = typer.Argument("drw-crypto", help="DRW workspace name"),
@@ -1404,7 +1564,12 @@ def drw_anti_failed(
     failed_file: str = typer.Option(
         "sub_calibrated_tail_cli_full.csv",
         "--failed-file",
-        help="Known underperforming submission used as the negative direction",
+        help="Known underperforming submission used as the default negative direction",
+    ),
+    failed_files: str = typer.Option(
+        "",
+        "--failed-files",
+        help="Optional comma-separated underperforming submissions. Overrides --failed-file.",
     ),
     utility_file: str = typer.Option(
         "sub_anchor_blend_utility_scan.csv",
@@ -1415,6 +1580,14 @@ def drw_anti_failed(
         "0.04,0.06,0.08,0.10,0.12,0.15",
         "--beta-grid",
         help="Comma-separated beta values for rank(anchor + beta * (anchor - failed))",
+    ),
+    weight_grid: str = typer.Option(
+        "",
+        "--weight-grid",
+        help=(
+            "Optional semicolon-separated weights for multiple failed files, "
+            "for example '0.08+0.04;0.10+0.06'."
+        ),
     ),
     output_tag: str = typer.Option("anti_failed_rank_family", "--output-tag", help="Report filename tag"),
 ):
@@ -1433,14 +1606,16 @@ def drw_anti_failed(
     config = load_config(workspace)
     submissions_dir = workspace / "submissions"
     anchor_path = submissions_dir / anchor_file
-    failed_path = submissions_dir / failed_file
+    failed_names = [item.strip() for item in (failed_files or failed_file).split(",") if item.strip()]
+    failed_paths = [submissions_dir / item for item in failed_names]
     utility_path = submissions_dir / utility_file
     if not anchor_path.exists():
         console.print(f"[red]Missing anchor submission:[/red] {anchor_path}")
         raise typer.Exit(1)
-    if not failed_path.exists():
-        console.print(f"[red]Missing failed submission:[/red] {failed_path}")
-        raise typer.Exit(1)
+    for failed_path in failed_paths:
+        if not failed_path.exists():
+            console.print(f"[red]Missing failed submission:[/red] {failed_path}")
+            raise typer.Exit(1)
 
     def rank_normalize(values: np.ndarray) -> np.ndarray:
         ranks = rankdata(values, method="average").astype("float64")
@@ -1451,10 +1626,13 @@ def drw_anti_failed(
         return df.iloc[:, 0], df.iloc[:, 1].to_numpy(dtype="float64")
 
     ids, anchor_pred = read_submission(anchor_path)
-    failed_ids, failed_pred = read_submission(failed_path)
-    if not np.array_equal(ids.to_numpy(), failed_ids.to_numpy()):
-        console.print("[red]Anchor and failed submissions have different ID order.[/red]")
-        raise typer.Exit(1)
+    failed_refs = []
+    for failed_path in failed_paths:
+        failed_ids, failed_pred = read_submission(failed_path)
+        if not np.array_equal(ids.to_numpy(), failed_ids.to_numpy()):
+            console.print(f"[red]Anchor and failed submissions have different ID order:[/red] {failed_path.name}")
+            raise typer.Exit(1)
+        failed_refs.append((failed_path.name, failed_pred))
 
     utility_rank = None
     if utility_path.exists():
@@ -1465,29 +1643,57 @@ def drw_anti_failed(
             console.print("[yellow]Utility reference skipped because ID order differs.[/yellow]")
 
     anchor_rank = rank_normalize(anchor_pred)
-    failed_rank = rank_normalize(failed_pred)
-    betas = [float(item.strip()) for item in beta_grid.split(",") if item.strip()]
-    if not betas:
-        console.print("[red]Need at least one beta in --beta-grid.[/red]")
-        raise typer.Exit(1)
+    failed_ranks = [(name, rank_normalize(pred)) for name, pred in failed_refs]
+    if weight_grid:
+        weight_specs = []
+        for chunk in [item.strip() for item in weight_grid.split(";") if item.strip()]:
+            weights = [float(value.strip()) for value in chunk.split("+") if value.strip()]
+            if len(weights) != len(failed_ranks):
+                console.print(
+                    f"[red]Weight spec {chunk!r} has {len(weights)} weights but "
+                    f"{len(failed_ranks)} failed files were provided.[/red]"
+                )
+                raise typer.Exit(1)
+            weight_specs.append(weights)
+    else:
+        betas = [float(item.strip()) for item in beta_grid.split(",") if item.strip()]
+        if not betas:
+            console.print("[red]Need at least one beta in --beta-grid.[/red]")
+            raise typer.Exit(1)
+        weight_specs = [[beta] for beta in betas]
 
     rows = []
-    for beta in betas:
-        extrapolated = anchor_rank + beta * (anchor_rank - failed_rank)
+    for weights in weight_specs:
+        extrapolated = anchor_rank.copy()
+        for weight, (_, failed_rank) in zip(weights, failed_ranks):
+            extrapolated = extrapolated + weight * (anchor_rank - failed_rank)
         pred = rank_normalize(extrapolated)
-        suffix = f"beta{int(round(beta * 1000)):03d}"
+        if len(weights) == 1:
+            suffix = f"beta{int(round(weights[0] * 1000)):03d}"
+        else:
+            suffix = "w" + "_".join(f"{int(round(weight * 1000)):03d}" for weight in weights)
         sub_path = submissions_dir / f"sub_anti_failed_rank_{suffix}.csv"
         pd.DataFrame({"ID": ids, "prediction": pred}).to_csv(sub_path, index=False)
 
+        failed_spearmans = {
+            f"spearman_to_failed_{idx + 1}": float(np.corrcoef(failed_rank, pred)[0, 1])
+            for idx, (_, failed_rank) in enumerate(failed_ranks)
+        }
         meta = {
             "method": "anti_failed_extrapolation",
             "mode": "rank",
-            "beta": float(beta),
+            "beta": float(weights[0]) if len(weights) == 1 else None,
+            "weights": {
+                name: float(weight)
+                for weight, (name, _) in zip(weights, failed_ranks)
+            },
             "anchor_submission": anchor_path.name,
-            "failed_submission": failed_path.name,
+            "failed_submission": failed_ranks[0][0] if len(failed_ranks) == 1 else None,
+            "failed_submissions": [name for name, _ in failed_ranks],
             "scores": {},
             "spearman_to_anchor": float(np.corrcoef(anchor_rank, pred)[0, 1]),
-            "spearman_to_failed": float(np.corrcoef(failed_rank, pred)[0, 1]),
+            "spearman_to_failed": float(np.corrcoef(failed_ranks[0][1], pred)[0, 1]),
+            "max_spearman_to_failed": max(failed_spearmans.values()),
             "spearman_to_utility": None
             if utility_rank is None
             else float(np.corrcoef(utility_rank, pred)[0, 1]),
@@ -1502,6 +1708,7 @@ def drw_anti_failed(
         rows.append({
             "file": sub_path.name,
             **meta,
+            **failed_spearmans,
             "valid": validation.is_valid,
             "errors": "; ".join(validation.errors),
         })
@@ -1515,10 +1722,10 @@ def drw_anti_failed(
     for row in rows:
         table.add_row(
             row["file"],
-            f"{float(row['beta']):.3f}",
+            "" if row["beta"] is None else f"{float(row['beta']):.3f}",
             "Y" if row["valid"] else "N",
             f"{float(row['spearman_to_anchor']):.6f}",
-            f"{float(row['spearman_to_failed']):.6f}",
+            f"{float(row['max_spearman_to_failed']):.6f}",
             f"{float(row['mean_rank_delta_to_anchor']):.6f}",
         )
     console.print(table)

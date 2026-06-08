@@ -37,6 +37,16 @@ After the third submission result, the next offline candidates are:
 
 Recommendation for the next real submission is `sub_anchor_blend_micro_scan.csv` if staying within model-backed candidates. If deliberately using public LB feedback as the main signal, prefer `sub_anti_failed_rank_beta100.csv` over the earlier beta `0.20` because it is much closer to the first submission while still moving clearly away from the failed second submission.
 
+After adding third-submission geometry scoring, `sub_anchor_blend_micro_scan.csv` remains the preferred model-backed next submit:
+
+| Candidate | Geometry score | Local score | Anchor Spearman | Max failed Spearman | Rank delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `sub_anchor_blend_micro_scan.csv` | `0.664044` | `0.128042` | `0.998170` | `0.999508` | `0.013142` |
+| `sub_anchor_blend_low_failed_scan.csv` | `0.662822` | `0.127900` | `0.997267` | `0.999162` | `0.015701` |
+| `sub_anti_failed_rank_w100_040.csv` | `0.650203` |  | `0.999030` | `0.991509` | `0.009562` |
+
+The dual anti-failed family is useful as a diagnostic probe, but it has no local score and is still highly correlated with the third submission. Keep `sub_anchor_blend_micro_scan.csv` first unless explicitly choosing a public-feedback-only experiment.
+
 ## Candidate
 
 File:

@@ -602,3 +602,23 @@
   - Spearman to failed tail: `0.890386`
   - mean rank delta to anchor: `0.008920`
 - Decision: do not mix this with model-backed local scores. Treat `beta100` as the next diagnostic public-feedback probe only if we choose to spend one submission testing whether moving away from the second failed direction improves LB.
+
+## Submission Geometry Scoring - 2026-06-10
+
+- Added `kar drw-score-candidates` to rank candidate CSVs against real submission geometry:
+  - positive anchor: first public-best submission (`0.08199` public LB)
+  - negative references: second failed tail submission (`0.07184`) and third failed utility blend (`0.07695`)
+  - local metadata score, when available, is included as a bounded bonus instead of the dominant objective
+- Ran:
+  `kar drw-score-candidates drw-crypto --output-tag candidate_geometry_score`
+- Report: `reports/candidate_geometry_score.csv`
+- Also generated a dual anti-failed family using both failed real submissions:
+  `kar drw-anti-failed drw-crypto --failed-files sub_calibrated_tail_cli_full.csv,sub_anchor_blend_utility_scan.csv --weight-grid '0.04+0.02;0.06+0.02;0.08+0.02;0.08+0.04;0.10+0.04;0.12+0.04;0.10+0.06;0.12+0.06;0.15+0.06' --output-tag anti_failed_dual_family`
+- Reports:
+  - `reports/anti_failed_dual_family.csv`
+  - `reports/next_geometry_score.csv`
+- Dry-run validated `sub_anchor_blend_micro_scan.csv`: valid, budget remaining `0/2`.
+- Current next-submit recommendation:
+  - model-backed first choice: `sub_anchor_blend_micro_scan.csv`
+  - diagnostic public-feedback fallback: `sub_anti_failed_rank_w100_040.csv` or `sub_anti_failed_rank_beta100.csv`
+- Rationale: geometry scoring still ranks the micro anchor blend first among unsubmitted candidates because it has a local utility score and stays closer to the public-best anchor than the failed third submission. Dual anti-failed variants are better probes of bad public directions but lack local validation.
