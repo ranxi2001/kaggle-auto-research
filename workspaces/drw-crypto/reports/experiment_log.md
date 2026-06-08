@@ -696,3 +696,15 @@
 - Re-ran `kar submit drw-crypto --file submissions\sub_anchor_blend_micro_scan.csv --force` while budget was exhausted.
 - Verified reserve queue length remained `1` and still points to `sub_anchor_blend_micro_scan.csv` with CV/utility `0.128042`.
 - Added `tests/test_submission_budget.py` coverage for reserve de-duplication and distinct queued paths.
+
+## Next Submit Plan Artifact - 2026-06-10
+
+- Added tracked submit handoff plan: `reports/next_submit_plan.md`.
+- Also generated a local ignored JSON mirror at `reports/next_submit_plan.json` for automation.
+- The plan records:
+  - current best public/private scores
+  - reserve queue contents
+  - recommended next submission: `sub_anchor_blend_micro_scan.csv`
+  - pre-check command: `kar submit drw-crypto --status`
+  - flush command after budget reset: `kar submit drw-crypto --flush`
+  - fallback candidates and post-submit sync commands

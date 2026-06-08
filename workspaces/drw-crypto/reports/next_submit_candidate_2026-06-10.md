@@ -65,6 +65,8 @@ Queue status: `sub_anchor_blend_micro_scan.csv` is reserved in `.state/submissio
 
 Before flushing, verify with `.\kar.cmd submit drw-crypto --status` that the reserve queue contains only `sub_anchor_blend_micro_scan.csv`.
 
+Tracked handoff plan: `reports/next_submit_plan.md`. A local ignored JSON mirror may also exist for automation.
+
 ## Third Submission Details
 
 File:
