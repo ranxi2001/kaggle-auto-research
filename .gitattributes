@@ -1,0 +1,19 @@
+# Keep repository text files friendly to WSL/Linux shells.
+* text=auto eol=lf
+
+# Shell and CLI launchers must never check out with CRLF.
+*.sh text eol=lf
+kar text eol=lf
+Makefile text eol=lf
+
+# Common binary artifacts.
+*.zip binary
+*.gz binary
+*.parquet binary
+*.pkl binary
+*.npy binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary

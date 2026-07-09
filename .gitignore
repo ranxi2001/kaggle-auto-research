@@ -19,7 +19,11 @@ __pycache__/
 dist/
 build/
 .venv/
+.venv-*/
 venv/
+
+# uv
+.uv-cache/
 
 # Jupyter
 .ipynb_checkpoints/

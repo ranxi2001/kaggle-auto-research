@@ -9,22 +9,21 @@ an experimental, agent-oriented toolchain for reproducible Kaggle workflows.
 git clone https://github.com/ranxi2001/kaggel-auto-research.git
 cd kaggel-auto-research
 
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e ".[dev]"
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync --extra dev
 ```
 
-Use the short launcher on Windows:
+Use the short launcher on WSL/Linux:
 
 ```bash
-.\kar auth
-.\kar ls
+./kar auth
+./kar ls
 ```
 
-Or, after activating the virtual environment:
+Or use uv directly:
 
 ```bash
-kar --help
+uv run kar --help
 ```
 
 ## What To Contribute

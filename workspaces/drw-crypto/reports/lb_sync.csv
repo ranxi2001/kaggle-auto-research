@@ -1,4 +1,6 @@
 ref,fileName,date,description,status,publicScore,privateScore
+54502395,sub_upper_nnls_best_anchor_safe_ridge_top_plus_anchor_tail5_20260710.csv,2026-07-09 17:35:40.967000,Manual submit sub_upper_nnls_best_anchor_safe_ridge_top_plus_anchor_tail5_20260710.csv,SubmissionStatus.COMPLETE,0.07251,0.07326
+54502051,sub_anti_failed_rank_w020_040.csv,2026-07-09 17:19:19.230000,Manual submit sub_anti_failed_rank_w020_040.csv,SubmissionStatus.COMPLETE,0.07751,0.07519
 53488725,sub_anchor_blend_micro_scan.csv,2026-06-08 22:29:35.533000,Queued micro scan candidate CV=0.128042,SubmissionStatus.COMPLETE,0.07720,0.07698
 53488239,sub_anchor_blend_utility_scan.csv,2026-06-08 21:45:33.160000,Manual override submit sub_anchor_blend_utility_scan.csv CV=0.129080,SubmissionStatus.COMPLETE,0.07695,0.07766
 53487669,sub_calibrated_tail_cli_full.csv,2026-06-08 20:53:21.863000,Manual submit sub_calibrated_tail_cli_full.csv CV=0.123363,SubmissionStatus.COMPLETE,0.07184,0.08128

@@ -552,6 +552,28 @@ def drw_ridge(
     submitter = Submitter(workspace, config)
     sub_path = submitter.generate_submission(best["test_preds"], model_version=f"v{version:03d}")
     validation = submitter.validate(sub_path)
+    sub_path.with_suffix(".json").write_text(json.dumps({
+        "source_model_versions": [f"v{version:03d}"],
+        "ensemble_weights": {f"v{version:03d}": 1.0},
+        "local_cv_score": best["score"],
+        "oof_pearson": best["score"],
+        "mean_score": best["score"],
+        "metric": "pearson",
+        "metric_direction": "maximize",
+        "generation_command": (
+            f"kar drw-ridge {name} --top-k {top_k} --folds {folds} "
+            f"--cv {cv} --alphas {alphas}"
+        ),
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "dry_run_validation": {
+            "is_valid": validation.is_valid,
+            "errors": validation.errors,
+            "warnings": validation.warnings,
+        },
+        "kaggle_submission_id": None,
+        "lb_score": None,
+        "rank": None,
+    }, indent=2), encoding="utf-8")
     console.print(f"[green]Best Ridge OOF Pearson:[/green] {best['score']:.6f}")
     console.print(f"  alpha: {best['alpha']:g}")
     console.print(f"  Model: {model_path}")
@@ -1307,8 +1329,11 @@ def drw_compare_submissions(
         for source, value in [
             ("scores.utility", scores.get("utility")),
             ("scores.composite", scores.get("composite")),
+            ("scores.eval_corr", scores.get("eval_corr")),
+            ("scores.full_common_corr", scores.get("full_common_corr")),
             ("oof_pearson", meta.get("oof_pearson")),
             ("mean_score", meta.get("mean_score")),
+            ("local_cv_score", meta.get("local_cv_score")),
         ]:
             if value is not None:
                 local_score = float(value)
@@ -1462,8 +1487,11 @@ def drw_score_candidates(
         for source, value in [
             ("scores.utility", scores.get("utility")),
             ("scores.composite", scores.get("composite")),
+            ("scores.eval_corr", scores.get("eval_corr")),
+            ("scores.full_common_corr", scores.get("full_common_corr")),
             ("oof_pearson", meta.get("oof_pearson")),
             ("mean_score", meta.get("mean_score")),
+            ("local_cv_score", meta.get("local_cv_score")),
         ]:
             if value is not None:
                 return float(value), source

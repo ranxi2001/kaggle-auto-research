@@ -136,7 +136,7 @@ Agent value:
 ### 8. Robust CLI UX for Agent and Human Use
 
 Current state:
-- Root `kar.cmd` hides `.venv`.
+- Root `kar` hides `.venv` on WSL/Linux; `kar.cmd` remains for Windows.
 - Some commands still produce terminal encoding issues.
 - Long-running commands lack structured progress output.
 

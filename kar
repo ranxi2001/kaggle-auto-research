@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="${ROOT}/.venv/bin/python"
+
+if [[ ! -x "${PY}" ]]; then
+  if [[ -e "${ROOT}/.venv/Scripts/python.exe" ]]; then
+    cat >&2 <<'EOF'
+.venv exists but looks like a Windows virtualenv.
+Recreate it from WSL:
+  mv .venv .venv-windows
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -e .
+EOF
+    exit 1
+  fi
+
+  cat >&2 <<'EOF'
+.venv not found. Run:
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -e .
+EOF
+  exit 1
+fi
+
+exec "${PY}" -m cli.main "$@"

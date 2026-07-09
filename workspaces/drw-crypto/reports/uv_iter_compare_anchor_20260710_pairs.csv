@@ -1,0 +1,7 @@
+left,right,spearman,mean_rank_delta
+sub_anchor_blend_micro_scan.csv,sub_anchor_blend_utility_scan.csv,0.9995076221684583,0.006720596296845927
+sub_anchor_blend_micro_scan.csv,sub_uv_iter_anchor_20260710.csv,0.9995076221684583,0.006720596296845927
+sub_anchor_blend_micro_scan.csv,sub_uv_iter_anchor_expanded_20260710.csv,0.9995076221684583,0.006720596296845927
+sub_anchor_blend_utility_scan.csv,sub_uv_iter_anchor_20260710.csv,1.0,0.0
+sub_anchor_blend_utility_scan.csv,sub_uv_iter_anchor_expanded_20260710.csv,1.0,0.0
+sub_uv_iter_anchor_20260710.csv,sub_uv_iter_anchor_expanded_20260710.csv,1.0,0.0

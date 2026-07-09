@@ -97,7 +97,7 @@ class Submitter:
     def __init__(self, workspace_path: Path, config: WorkspaceConfig):
         self.workspace = workspace_path
         self.config = config
-        self.api = KaggleAPI()
+        self.api: KaggleAPI | None = None
         self.validator = SubmissionValidator()
         self.tracker = ScoreTracker(workspace_path)
         self.budget = SubmissionBudget(
@@ -211,6 +211,8 @@ class Submitter:
 
         # Actually submit
         slug = self.config.competition.slug if hasattr(self.config.competition, 'slug') else self.config.competition.name
+        if self.api is None:
+            self.api = KaggleAPI()
         result = self.api.submit(slug, submission_path, message)
 
         self.budget.record(str(submission_path), cv_score, message)

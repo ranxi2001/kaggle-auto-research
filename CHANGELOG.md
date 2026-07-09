@@ -10,7 +10,7 @@ pre-1.0 versions while the CLI and artifact contracts are still evolving.
 ### Added
 
 - Agent-oriented Kaggle workflow documentation.
-- `kar` CLI project entrypoint and Windows launcher.
+- `kar` CLI project entrypoint, WSL/Linux bash launcher, and Windows launcher.
 - Kaggle OAuth helper via `kar auth`.
 - Workspace lifecycle commands for init, data download, EDA, training, pipeline
   execution, analysis, ensembling, leaderboard lookup, and submission dry-runs.

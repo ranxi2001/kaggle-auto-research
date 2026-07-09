@@ -134,28 +134,31 @@ See [docs/agent-tooling-roadmap.md](docs/agent-tooling-roadmap.md) for the full 
 git clone https://github.com/ranxi2001/kaggel-auto-research.git
 cd kaggel-auto-research
 
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e .
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
 ```
 
-On Windows, the repository includes a short launcher:
+If the repository already contains a Windows-created `.venv`, run `mv .venv .venv-windows` from WSL before `uv sync`.
+
+On WSL/Linux, prefer `uv run`:
 
 ```bash
-.\kar auth
-.\kar ls
+uv run kar auth
+uv run kar ls
 ```
 
-In Git Bash:
+The repository also includes a bash launcher:
 
 ```bash
-./kar.cmd auth
+./kar auth
 ```
+
+Windows users can still run `.\kar.cmd auth`.
 
 Development dependencies:
 
 ```bash
-pip install -e ".[dev]"
+uv sync --extra dev
 ```
 
 ## Quick Start
@@ -220,7 +223,7 @@ kar submit <name> --dry-run -f submissions/sub_001.csv
 kar submit <name> --flush
 ```
 
-Note: `kar.cmd` is a short Windows launcher at the repository root, so users do not need to type `.\.venv\Scripts\kar.exe`. After editable installation, `kar` also works directly.
+Note: on WSL/Linux, prefer `uv run kar ...` or the repository-root `./kar` launcher. `kar.cmd` remains only as a Windows compatibility launcher.
 
 `kar submit <name> --status` shows the local budget date, next local reset date, and full reserve-queue filenames. Use it before `--flush` to confirm exactly which candidate will be submitted.
 If the same submission file is queued more than once, the reserve entry is updated in place instead of duplicated.
