@@ -181,6 +181,20 @@ class Submitter:
                 "remaining_today": self.budget.remaining_today(),
             }
 
+        if getattr(self.config.submission, "mode", "api") == "notebook":
+            slug = getattr(self.config.competition, "slug", self.config.competition.name)
+            competition_url = f"https://www.kaggle.com/competitions/{slug}"
+            return {
+                "success": False,
+                "notebook_required": True,
+                "errors": [
+                    "This competition requires a Kaggle Notebook submission. "
+                    f"Commit the notebook and submit its output at {competition_url}"
+                ],
+                "competition_url": competition_url,
+                "remaining_today": self.budget.remaining_today(),
+            }
+
         # Budget check — ALWAYS enforced, even with force=True
         if not self.budget.can_submit():
             self.budget.reserve(
@@ -262,6 +276,19 @@ class Submitter:
 
     def submit_reserved(self, n: int = 1) -> list[dict]:
         """Submit the best N reserved candidates."""
+        mode = getattr(self.config.submission, "mode", "api")
+        if mode in {"notebook", "writeup"}:
+            return [
+                {
+                    "success": False,
+                    f"{mode}_required": True,
+                    "errors": [
+                        f"Reserve queue cannot be flushed in {mode} submission mode; "
+                        "the queued candidate was kept."
+                    ],
+                    "remaining_today": self.budget.remaining_today(),
+                }
+            ]
         results = []
         direction = self.config.competition.metric_direction
         for _ in range(n):

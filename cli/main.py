@@ -2333,6 +2333,9 @@ def submit(
         elif result.get("writeup_required"):
             console.print(f"[yellow]Writeup required:[/yellow] {result['errors'][0]}")
             raise typer.Exit(2)
+        elif result.get("notebook_required"):
+            console.print(f"[yellow]Notebook required:[/yellow] {result['errors'][0]}")
+            raise typer.Exit(2)
         elif result.get("queued"):
             console.print(f"[yellow]Queued:[/yellow] {result['errors'][0]}")
         else:

@@ -24,6 +24,8 @@ class DataConfig:
     sample_submission: str = "data/raw/sample_submission.csv"
     target_column: str = "target"
     id_column: str = "id"
+    group_column: str = ""
+    order_column: str = ""
 
 
 @dataclass
@@ -39,7 +41,7 @@ class SubmissionConfig:
     auto_submit: bool = False
     best_threshold: float = 0.01
     max_daily: int = 5
-    mode: Literal["api", "writeup"] = "api"
+    mode: Literal["api", "writeup", "notebook"] = "api"
     format: Literal["csv", "skill_zip"] = "csv"
 
 

@@ -125,3 +125,56 @@ def test_maximize_threshold_compares_against_highest_prior_score(tmp_path):
     assert not result["success"]
     assert result["queued"]
     assert submitter.budget.today_count() == 0
+
+
+def test_notebook_mode_does_not_call_submission_api(tmp_path):
+    submission = tmp_path / "submissions" / "submission.csv"
+    submission.parent.mkdir()
+    submission.write_text("id,tvt\nwell_1,0.5\n", encoding="utf-8")
+    sample_submission = tmp_path / "sample_submission.csv"
+    sample_submission.write_text("id,tvt\nwell_1,0.0\n", encoding="utf-8")
+
+    config = SimpleNamespace(
+        submission=SimpleNamespace(
+            max_daily=5,
+            best_threshold=0.0,
+            mode="notebook",
+            format="csv",
+        ),
+        data=SimpleNamespace(sample_submission="sample_submission.csv"),
+        competition=SimpleNamespace(name="grouped-regression", metric_direction="minimize"),
+    )
+    submitter = Submitter(tmp_path, config)
+
+    class UnexpectedAPI:
+        def submit(self, slug, path, message):
+            raise AssertionError("notebook mode must not call the competition submission API")
+
+    submitter.api = UnexpectedAPI()
+    result = submitter.submit(submission, cv_score=1.0, force=True)
+
+    assert not result["success"]
+    assert result["notebook_required"]
+    assert result["competition_url"].endswith("/competitions/grouped-regression")
+    assert submitter.budget.today_count() == 0
+
+
+def test_notebook_mode_flush_keeps_reserved_candidate(tmp_path):
+    config = SimpleNamespace(
+        submission=SimpleNamespace(
+            max_daily=5,
+            best_threshold=0.0,
+            mode="notebook",
+            format="csv",
+        ),
+        data=SimpleNamespace(sample_submission="sample_submission.csv"),
+        competition=SimpleNamespace(name="grouped-regression", metric_direction="minimize"),
+    )
+    submitter = Submitter(tmp_path, config)
+    candidate = tmp_path / "submissions" / "candidate.csv"
+    submitter.budget.reserve(str(candidate), 1.0, "candidate")
+
+    results = submitter.submit_reserved()
+
+    assert results[0]["notebook_required"]
+    assert len(submitter.budget.get_reserved()) == 1
