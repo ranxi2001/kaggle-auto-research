@@ -40,6 +40,10 @@ Thumbs.db
 .env
 *.json
 !templates/**/*.json
+!workspaces/*/notebooks/*/kernel-metadata.json
+!workspaces/rogii-wellbore-geology-prediction/journal.json
+!workspaces/rogii-wellbore-geology-prediction/idea_pool.json
+!workspaces/rogii-wellbore-geology-prediction/reports/*.json
 !package.json
 
 # Kaggle

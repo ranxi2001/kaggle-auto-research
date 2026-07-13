@@ -1,0 +1,60 @@
+{
+  "metric": "rmse",
+  "direction": "minimize",
+  "splitter": "GroupKFold(n_splits=5, group=well_id)",
+  "folds": [
+    {
+      "fold": 1,
+      "selected_config": "very_loose",
+      "selected_blend_to_last_tvt": 0.7,
+      "train_rmse": 15.819972865656764,
+      "validation_rmse": 15.016456319413807,
+      "train_wells": 618,
+      "validation_wells": 155,
+      "validation_rows": 755859
+    },
+    {
+      "fold": 2,
+      "selected_config": "very_loose",
+      "selected_blend_to_last_tvt": 0.7,
+      "train_rmse": 15.82594387300141,
+      "validation_rmse": 15.015482433953688,
+      "train_wells": 618,
+      "validation_wells": 155,
+      "validation_rows": 777866
+    },
+    {
+      "fold": 3,
+      "selected_config": "very_loose",
+      "selected_blend_to_last_tvt": 0.7,
+      "train_rmse": 15.74676743156573,
+      "validation_rmse": 15.323147238418878,
+      "train_wells": 618,
+      "validation_wells": 155,
+      "validation_rows": 758564
+    },
+    {
+      "fold": 4,
+      "selected_config": "very_loose",
+      "selected_blend_to_last_tvt": 0.8,
+      "train_rmse": 15.701938756973062,
+      "validation_rmse": 15.60406473720722,
+      "train_wells": 619,
+      "validation_wells": 154,
+      "validation_rows": 746299
+    },
+    {
+      "fold": 5,
+      "selected_config": "very_loose",
+      "selected_blend_to_last_tvt": 0.7,
+      "train_rmse": 15.202683274815865,
+      "validation_rmse": 17.412930444584237,
+      "train_wells": 619,
+      "validation_wells": 154,
+      "validation_rows": 745401
+    }
+  ],
+  "pooled_nested_rmse": 15.69111495667692,
+  "rows": 3783989,
+  "wells": 773
+}

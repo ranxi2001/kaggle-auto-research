@@ -1,0 +1,35 @@
+competition:
+  deadline: '2026-08-05T23:59:00Z'
+  metric: rmse
+  metric_direction: minimize
+  name: rogii-wellbore-geology-prediction
+  type: tabular
+  url: https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction
+data:
+  group_column: _well_id
+  id_column: id
+  order_column: MD
+  sample_submission: data/raw/sample_submission.csv
+  target_column: TVT
+  test: data/raw/test
+  train: data/raw/train
+model:
+  cv_folds: 5
+  cv_strategy: group_kfold
+  primary: lightgbm
+  seed: 42
+pipeline:
+  iteration_limit: 10
+  stages:
+  - research
+  - eda
+  - features
+  - train
+  - evaluate
+  - submit
+submission:
+  auto_submit: false
+  best_threshold: 0.01
+  format: csv
+  max_daily: 2
+  mode: notebook

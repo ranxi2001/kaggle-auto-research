@@ -1,0 +1,15 @@
+{
+  "metric": "rmse",
+  "direction": "minimize",
+  "rows": 3783989,
+  "wells": 773,
+  "left_version": "v001",
+  "left_rmse": 15.909852870734554,
+  "right_version": "v003",
+  "right_rmse": 14.787502061307364,
+  "best_right_weight": 0.875,
+  "best_blend_rmse": 14.760946957326281,
+  "right_better_wells": 450,
+  "right_worse_wells": 323,
+  "median_well_rmse_delta": -0.6866027235092922
+}

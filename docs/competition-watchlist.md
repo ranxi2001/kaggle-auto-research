@@ -1,10 +1,10 @@
 # Competition Watchlist
 
-候选竞赛登记表。这里只记录研究意向，不代表已经接受竞赛规则、加入竞赛、创建 workspace、下载数据或提交结果。
+竞赛研究与执行状态登记表。只有明确标为 submitted 的项目才代表已经产生真实提交。
 
 - 登记日期：2026-07-10
 - 信息快照：Kaggle 官方 API 和竞赛页面，初始于 2026-07-10，最新核验于 2026-07-13
-- 当前状态：`skill-lift` 已提交；下一竞赛尚未切换，`rogii-wellbore-geology-prediction` 为冲牌首选候选
+- 当前状态：`skill-lift` 已提交；`rogii-wellbore-geology-prediction` 已启动并形成 v004 本地候选，尚未真实提交
 - 启动约束：选择并切换具体竞赛前需要用户确认；启动后所有产物必须写入 `workspaces/<competition>/`
 - 截止时间：均为 UTC；临近启动时必须重新查询截止时间、报名状态、规则和数据可用性
 
@@ -16,7 +16,7 @@
 | URL | https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction |
 | Track | Grouped regression over horizontal-well trajectories and reference logs |
 | Category | Featured |
-| Status | `recommended_waiting_user_confirmation` - account has not entered and no workspace has been created |
+| Status | `candidate_ready` - rules accepted, data downloaded, v004 notebook package validated locally, no Kaggle submission yet |
 | Entry deadline | 2026-07-29 23:59 UTC |
 | Final deadline | 2026-08-05 23:59 UTC |
 | Reward | USD 50,000 |
@@ -27,7 +27,8 @@
 | Data | About 1.23 GiB across 2,327 files: 773 train wells with CSV/log/image triplets and a hidden test of about 200 wells |
 | Why recommended | The only currently open standard prediction task found with both an explicit local metric and competition points/medals enabled |
 | Main risks | Crowded leaderboard, short runway, domain-specific well correlation, hidden code test, and potential leakage around partially observed `TVT_input` |
-| Start gate | User confirms the competition switch; accept rules before July 29, initialize the workspace, download data, validate schema, and establish well-group CV before training |
+| Local result | v004 pooled well-GroupKFold RMSE 14.743751, 7.33% below the v001 last-known baseline |
+| Next gate | Explicit user approval to push the private Kaggle notebook and submit its `submission.csv` output |
 
 ## Practice Only: Predicting Student Health Risk
 
@@ -158,3 +159,4 @@ This priority contains two related competitions. They remain separate candidates
 | 2026-07-11 | The authenticated Kaggle UI reported the v004 Writeup as submitted. Anonymous access still returned 404, so public visibility remains unverified. |
 | 2026-07-13 | `playground-series-s6e7` was initially shortlisted for its clear Balanced Accuracy metric, but the official API reports `awards_points=false`; it remains a practice-only option. |
 | 2026-07-13 | Official Kaggle API checks identified Featured competition `rogii-wellbore-geology-prediction` as the best open medal-eligible task with a standard metric: RMSE and `awards_points=true`. No workspace was created, no rules were accepted, and no data was downloaded pending user confirmation. |
+| 2026-07-13 | The user accepted ROGII rules and confirmed the switch. Full-data well GroupKFold produced v004 RMSE 14.743751 versus 15.909853 for v001; a private offline notebook package passed local contract checks. No notebook was pushed and no real submission was made. |

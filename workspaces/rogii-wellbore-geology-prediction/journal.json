@@ -1,0 +1,13 @@
+{
+  "competition": "rogii-wellbore-geology-prediction",
+  "metric": "rmse",
+  "direction": "minimize",
+  "updated_at": "2026-07-13T15:30:00Z",
+  "best_version": "v004",
+  "experiments": [
+    {"version": "v001", "parent": null, "status": "completed", "overall": 15.909852870734554},
+    {"version": "v002", "parent": "v001", "status": "completed", "overall": 15.691114956676921},
+    {"version": "v003", "parent": "v002", "status": "completed", "overall": 14.787502061307364},
+    {"version": "v004", "parent": "v003", "status": "candidate_ready", "overall": 14.74375058468573}
+  ]
+}
