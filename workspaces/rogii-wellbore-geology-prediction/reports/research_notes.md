@@ -55,14 +55,15 @@ ensemble weight was selected on the same OOF predictions used for reporting. The
 therefore have selection optimism and are not fully nested estimates; leaderboard calibration
 remains necessary.
 
-A self-contained, private, internet-disabled notebook package exists under `notebooks/v004/`. It
-dynamically discovers mounted data, trains from competition data, maps predictions to runtime sample
-IDs, and writes only `submission.csv`. No notebook has been pushed and no Kaggle submission has been
-made.
+A self-contained, private, internet-disabled notebook package exists under `notebooks/v004/`. Kaggle
+kernel version 1 completed in about 11.4 minutes, dynamically discovered the mounted data, trained
+from competition data, mapped predictions to runtime sample IDs, and wrote only `submission.csv`.
+Submission ref 54653094 completed with public RMSE 14.683 and rank 3628 of 4829 teams.
 
 ## Residual Risks
 
 - GroupKFold measures generalization to unseen wells but cannot reproduce the hidden well mix.
 - The fifth fold is materially harder than the others, so well-distribution shift remains visible.
 - Beam-feature and blend choices are not fully nested; v003 is the fallback candidate.
-- A real leaderboard score requires a user-approved notebook commit and submission.
+- The first leaderboard calibration is directionally consistent with local CV but far outside the
+  current medal range; a materially different sequence-alignment strategy is required.

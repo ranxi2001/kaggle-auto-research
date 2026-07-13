@@ -27,6 +27,7 @@ def test_generated_notebook_has_hidden_test_contract(tmp_path):
     source = "\n".join(cell["source"] for cell in notebook["cells"])
 
     assert metadata["enable_internet"] is False
+    assert metadata["id"] == "example-user/kar-rogii-v004-grouped-residual-beam-ensemble"
     assert metadata["competition_sources"] == ["rogii-wellbore-geology-prediction"]
     assert metadata["code_file"] == "rogii-v004.ipynb"
     assert "rglob(\"sample_submission.csv\")" in source

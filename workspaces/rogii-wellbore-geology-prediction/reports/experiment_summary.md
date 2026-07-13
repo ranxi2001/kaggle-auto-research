@@ -21,12 +21,13 @@ The v003 model improves on v001 for 450 of 773 wells and worsens on 323, indicat
 heterogeneous signal. v004 reduces fold dispersion versus v003. The hardest v004 fold scores
 16.311239, so hidden distribution shift remains the dominant risk.
 
-## Candidate Decision
+## Leaderboard Calibration
 
-v004 is the first leaderboard calibration candidate. v003 is the conservative fallback if the
-blend underperforms. Both were generated without public leaderboard artifacts or training-target
-lookups for the visible test IDs.
+Kaggle kernel version 1 retrained v004 offline and reported pooled CV RMSE 14.903702. The code
+submission completed as ref 54653094 with public LB RMSE 14.683, rank 3628 of 4829. Local CV and LB
+move in the same direction, but the candidate is far outside the current top-10% reference boundary
+at rank 483 and RMSE 7.154.
 
-The local visible-test CSV and JSON sidecar passed sample-order, uniqueness, row-count, and finite
-prediction checks. Because ROGII is notebook-only, these files are format smoke tests rather than
-direct API submissions. Actual submission remains pending explicit user approval.
+The submission verifies the end-to-end notebook and validation design, but v004 is no longer a medal
+candidate. Further submissions should require a large local improvement from a new geological
+sequence-alignment strategy, not another small blend or LightGBM parameter adjustment.

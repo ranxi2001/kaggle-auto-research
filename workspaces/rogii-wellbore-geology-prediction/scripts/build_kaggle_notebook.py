@@ -151,7 +151,7 @@ print(json.dumps({
             raise FileExistsError(f"Refusing to overwrite {path}")
     notebook_path.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
     metadata = {
-        "id": f"{username}/kar-rogii-v004",
+        "id": f"{username}/kar-rogii-v004-grouped-residual-beam-ensemble",
         "title": "KAR ROGII v004 Grouped Residual Beam Ensemble",
         "code_file": notebook_path.name,
         "language": "python",

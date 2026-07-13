@@ -1,11 +1,11 @@
 {
   "competition": "rogii-wellbore-geology-prediction",
-  "updated_at": "2026-07-13T15:30:00Z",
+  "updated_at": "2026-07-13T16:13:14Z",
   "ideas": [
     {"id": "beam_alignment", "status": "validated", "result_version": "v002"},
     {"id": "regularized_residual_lgbm", "status": "validated", "result_version": "v003"},
-    {"id": "beam_residual_blend", "status": "candidate", "result_version": "v004"},
+    {"id": "beam_residual_blend", "status": "submitted_below_medal_range", "result_version": "v004", "public_lb": 14.683},
     {"id": "fold_robust_weighting", "status": "pending", "reason": "hard fifth fold and heterogeneous well gains"},
-    {"id": "leaderboard_calibration", "status": "requires_user_approval", "reason": "notebook submission is irreversible"}
+    {"id": "leaderboard_calibration", "status": "completed", "result_version": "v004", "submission_ref": 54653094, "rank": 3628}
   ]
 }

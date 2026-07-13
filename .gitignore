@@ -6,6 +6,7 @@ workspaces/*/models/
 workspaces/*/submissions/
 workspaces/*/.state/
 workspaces/*/notebooks/public/
+workspaces/*/reports/leaderboard-snapshot-*/
 *.parquet
 *.h5
 *.pkl
