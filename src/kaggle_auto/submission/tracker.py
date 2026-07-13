@@ -50,17 +50,21 @@ class ScoreTracker:
                 break
         self._save(history)
 
-    def get_best_score(self) -> float | None:
+    def get_best_score(self, direction: str = "minimize") -> float | None:
         """Get best CV score from history."""
         history = self._load()
         scores = [e["cv_score"] for e in history if e.get("cv_score") is not None]
-        return min(scores) if scores else None
+        if not scores:
+            return None
+        return max(scores) if direction == "maximize" else min(scores)
 
-    def get_best_lb_score(self) -> float | None:
+    def get_best_lb_score(self, direction: str = "minimize") -> float | None:
         """Get best LB score from history."""
         history = self._load()
         scores = [e["lb_score"] for e in history if e.get("lb_score") is not None]
-        return min(scores) if scores else None
+        if not scores:
+            return None
+        return max(scores) if direction == "maximize" else min(scores)
 
     def get_daily_submission_count(self) -> int:
         """Count submissions made today."""

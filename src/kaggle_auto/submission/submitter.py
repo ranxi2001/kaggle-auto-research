@@ -127,6 +127,15 @@ class Submitter:
 
     def validate(self, submission_path: Path) -> ValidationResult:
         """Validate submission format."""
+        submission_format = getattr(self.config.submission, "format", "csv")
+        if submission_format == "skill_zip":
+            return self.validator.validate_skill_zip(submission_path)
+        if submission_format != "csv":
+            return ValidationResult(
+                False,
+                [f"Unsupported submission format: {submission_format}"],
+                [],
+            )
         sample_path = self.workspace / self.config.data.sample_submission
         return self.validator.validate(submission_path, sample_path)
 
@@ -158,6 +167,20 @@ class Submitter:
                 "errors": validation.errors,
             }
 
+        if getattr(self.config.submission, "mode", "api") == "writeup":
+            slug = getattr(self.config.competition, "slug", self.config.competition.name)
+            writeup_url = f"https://www.kaggle.com/competitions/{slug}/writeups"
+            return {
+                "success": False,
+                "writeup_required": True,
+                "errors": [
+                    "This hackathon requires a Kaggle Writeup submission. "
+                    f"Create and submit it at {writeup_url}"
+                ],
+                "writeup_url": writeup_url,
+                "remaining_today": self.budget.remaining_today(),
+            }
+
         # Budget check — ALWAYS enforced, even with force=True
         if not self.budget.can_submit():
             self.budget.reserve(
@@ -176,10 +199,10 @@ class Submitter:
 
         # Threshold check (skipped with force=True)
         if not force and cv_score is not None:
-            best = self.tracker.get_best_score()
-            threshold = self.config.submission.best_threshold
+            direction = self.config.competition.metric_direction
+            best = self.tracker.get_best_score(direction)
             if best is not None:
-                direction = self.config.competition.metric_direction
+                threshold = self.config.submission.best_threshold
                 if direction == "maximize" and cv_score < best + threshold:
                     self.budget.reserve(
                         str(submission_path), cv_score,
@@ -210,10 +233,17 @@ class Submitter:
                     }
 
         # Actually submit
-        slug = self.config.competition.slug if hasattr(self.config.competition, 'slug') else self.config.competition.name
-        if self.api is None:
-            self.api = KaggleAPI()
-        result = self.api.submit(slug, submission_path, message)
+        slug = getattr(self.config.competition, "slug", self.config.competition.name)
+        try:
+            if self.api is None:
+                self.api = KaggleAPI()
+            result = self.api.submit(slug, submission_path, message)
+        except RuntimeError as exc:
+            return {
+                "success": False,
+                "errors": [str(exc)],
+                "remaining_today": self.budget.remaining_today(),
+            }
 
         self.budget.record(str(submission_path), cv_score, message)
         self.tracker.record_submission(

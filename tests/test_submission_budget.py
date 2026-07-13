@@ -1,6 +1,8 @@
 from pathlib import Path
+from types import SimpleNamespace
+from zipfile import ZipFile
 
-from kaggle_auto.submission.submitter import SubmissionBudget
+from kaggle_auto.submission.submitter import SubmissionBudget, Submitter
 
 
 def test_reserve_updates_existing_submission_path(tmp_path):
@@ -33,3 +35,93 @@ def test_reserve_keeps_distinct_submission_paths(tmp_path):
     reserved = budget.get_reserved()
     assert len(reserved) == 2
     assert {Path(item["path"]).name for item in reserved} == {"sub_a.csv", "sub_b.csv"}
+
+
+def test_api_failure_does_not_consume_budget(tmp_path):
+    submission = tmp_path / "submissions" / "submission.csv"
+    submission.parent.mkdir()
+    submission.write_text("id,prediction\n1,0.5\n", encoding="utf-8")
+    sample_submission = tmp_path / "sample_submission.csv"
+    sample_submission.write_text("id,prediction\n1,0.0\n", encoding="utf-8")
+
+    config = SimpleNamespace(
+        submission=SimpleNamespace(max_daily=1, best_threshold=0.0),
+        data=SimpleNamespace(sample_submission="sample_submission.csv"),
+        competition=SimpleNamespace(name="skill-lift", metric_direction="maximize"),
+    )
+    submitter = Submitter(tmp_path, config)
+
+    class FailingAPI:
+        def submit(self, slug, path, message):
+            raise RuntimeError("403 rules not accepted")
+
+    submitter.api = FailingAPI()
+    result = submitter.submit(submission, cv_score=0.5, force=True)
+
+    assert not result["success"]
+    assert result["errors"] == ["403 rules not accepted"]
+    assert result["remaining_today"] == 1
+    assert submitter.budget.today_count() == 0
+
+
+def test_writeup_mode_does_not_call_submission_api(tmp_path):
+    submission = tmp_path / "submissions" / "skill.zip"
+    submission.parent.mkdir()
+    with ZipFile(submission, "w") as archive:
+        archive.writestr(
+            "skills/example/SKILL.md",
+            "---\nname: example\ndescription: Example skill.\n---\n",
+        )
+
+    config = SimpleNamespace(
+        submission=SimpleNamespace(
+            max_daily=1,
+            best_threshold=0.0,
+            mode="writeup",
+            format="skill_zip",
+        ),
+        data=SimpleNamespace(sample_submission=""),
+        competition=SimpleNamespace(name="skill-lift", metric_direction="maximize"),
+    )
+    submitter = Submitter(tmp_path, config)
+
+    class UnexpectedAPI:
+        def submit(self, slug, path, message):
+            raise AssertionError("writeup mode must not call the competition submission API")
+
+    submitter.api = UnexpectedAPI()
+    result = submitter.submit(submission, cv_score=0.5, force=True)
+
+    assert not result["success"]
+    assert result["writeup_required"]
+    assert result["writeup_url"] == "https://www.kaggle.com/competitions/skill-lift/writeups"
+    assert result["remaining_today"] == 1
+    assert submitter.budget.today_count() == 0
+
+
+def test_maximize_threshold_compares_against_highest_prior_score(tmp_path):
+    submission = tmp_path / "submissions" / "submission.csv"
+    submission.parent.mkdir()
+    submission.write_text("id,prediction\n1,0.5\n", encoding="utf-8")
+    sample_submission = tmp_path / "sample_submission.csv"
+    sample_submission.write_text("id,prediction\n1,0.0\n", encoding="utf-8")
+
+    config = SimpleNamespace(
+        submission=SimpleNamespace(max_daily=1, best_threshold=0.0, mode="api", format="csv"),
+        data=SimpleNamespace(sample_submission="sample_submission.csv"),
+        competition=SimpleNamespace(name="example", metric_direction="maximize"),
+    )
+    submitter = Submitter(tmp_path, config)
+    submitter.tracker.record_submission(submission, cv_score=0.4)
+    submitter.tracker.record_submission(submission, cv_score=0.6)
+
+    class UnexpectedAPI:
+        def submit(self, slug, path, message):
+            raise AssertionError("a score below the best maximize score must be queued")
+
+    submitter.api = UnexpectedAPI()
+    result = submitter.submit(submission, cv_score=0.5)
+
+    assert not result["success"]
+    assert result["queued"]
+    assert submitter.budget.today_count() == 0

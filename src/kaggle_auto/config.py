@@ -39,6 +39,8 @@ class SubmissionConfig:
     auto_submit: bool = False
     best_threshold: float = 0.01
     max_daily: int = 5
+    mode: Literal["api", "writeup"] = "api"
+    format: Literal["csv", "skill_zip"] = "csv"
 
 
 @dataclass

@@ -594,7 +594,6 @@ def drw_ensemble(
     transform: str = typer.Option("raw", "--transform", help="Prediction transform: raw|zscore|ranknorm|clip001"),
 ):
     """Build a simple OOF-optimized ensemble for DRW models."""
-    import itertools
     import json
 
     import numpy as np
@@ -2105,7 +2104,7 @@ def eda(
             console.print(f"[red]EDA failed:[/red] {result.get('reason')}")
             return
 
-    console.print(f"[yellow]Generating features...[/yellow]")
+    console.print("[yellow]Generating features...[/yellow]")
     feat_result = run_features(workspace, config)
     if feat_result["status"] == "completed":
         console.print(f"[green]Features done![/green] +{feat_result['new_columns']} columns")
@@ -2133,7 +2132,7 @@ def train(
     result = run_train(workspace, config)
 
     if result["status"] == "completed":
-        console.print(f"[green]Training done![/green]")
+        console.print("[green]Training done![/green]")
         console.print(f"  CV Score: {result['cv_mean']:.6f} (+/- {result['cv_std']:.6f})")
         console.print(f"  Folds: {result['fold_scores']}")
         console.print(f"  Model: {result['model_version']} at {result['model_path']}")
@@ -2282,6 +2281,7 @@ def submit(
             if not validation.is_valid:
                 for e in validation.errors:
                     console.print(f"    [red]{e}[/red]")
+                raise typer.Exit(1)
             return
 
         meta_path = file_path.with_suffix(".json")
@@ -2292,13 +2292,15 @@ def submit(
             try:
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))
                 scores = meta.get("scores") if isinstance(meta.get("scores"), dict) else {}
-                cv_score = (
-                    scores.get("utility")
-                    or scores.get("composite")
-                    or meta.get("oof_pearson")
-                    or meta.get("mean_score")
-                    or meta.get("composite_score")
+                score_candidates = (
+                    scores.get("utility"),
+                    scores.get("composite"),
+                    meta.get("local_cv_score"),
+                    meta.get("oof_pearson"),
+                    meta.get("mean_score"),
+                    meta.get("composite_score"),
                 )
+                cv_score = next((value for value in score_candidates if value is not None), None)
                 versions = []
                 for item in meta.get("models", []):
                     if isinstance(item, dict):
@@ -2306,6 +2308,12 @@ def submit(
                     else:
                         versions.append(str(item))
                 versions = [v for v in versions if v]
+                if not versions:
+                    source_versions = meta.get("source_model_versions", [])
+                    if isinstance(source_versions, (str, int)):
+                        source_versions = [source_versions]
+                    versions = [str(version) for version in source_versions]
+                    versions = [version for version in versions if version]
                 if versions:
                     model_version = ",".join(versions)
                 if cv_score is not None:
@@ -2322,10 +2330,14 @@ def submit(
         )
         if result.get("success"):
             console.print(f"[green]Submitted![/green] Remaining: {result.get('remaining_today', '?')}")
+        elif result.get("writeup_required"):
+            console.print(f"[yellow]Writeup required:[/yellow] {result['errors'][0]}")
+            raise typer.Exit(2)
         elif result.get("queued"):
             console.print(f"[yellow]Queued:[/yellow] {result['errors'][0]}")
         else:
             console.print(f"[red]Failed:[/red] {result.get('errors', ['unknown'])}")
+            raise typer.Exit(1)
         return
 
     # Default: show status and instructions
@@ -2348,7 +2360,6 @@ def pipeline(
 ):
     """Run the competition pipeline."""
     from kaggle_auto.workspace import get_workspace
-    from kaggle_auto.config import load_config
     from kaggle_auto.pipeline import PipelineRunner
     from kaggle_auto.pipeline.stages import register_all_stages
 
@@ -2419,7 +2430,6 @@ def ensemble(
     top_n: int = typer.Option(3, "--top", "-n", help="Number of top models to ensemble"),
 ):
     """Build an optimized ensemble from top models."""
-    import numpy as np
     import pandas as pd
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
@@ -2444,7 +2454,7 @@ def ensemble(
         console.print(f"[red]Ensemble failed:[/red] {result.get('reason', 'unknown')}")
         return
 
-    console.print(f"[green]Ensemble built![/green]")
+    console.print("[green]Ensemble built![/green]")
     console.print(f"  Models used: {result['models_used']}")
     console.print(f"  Weights: {[f'{w:.3f}' for w in result['weights']]}")
     console.print(f"  Ensemble score: {result['ensemble_score']:.6f}")
@@ -2453,7 +2463,7 @@ def ensemble(
     if improvement > 0:
         console.print(f"  [green]Improvement: {improvement:.6f}[/green]")
     else:
-        console.print(f"  [dim]No improvement over best single model[/dim]")
+        console.print("  [dim]No improvement over best single model[/dim]")
 
 
 @app.command()
@@ -2501,7 +2511,6 @@ def improve(
     Combines tree-search iteration, idea pool, ensemble building, and analysis
     into a single automated workflow.
     """
-    import numpy as np
     import pandas as pd
     from kaggle_auto.workspace import get_workspace
     from kaggle_auto.config import load_config
@@ -2567,11 +2576,11 @@ def improve(
     pool = IdeaPool(workspace)
     untried = pool.get_next(3)
     if untried:
-        console.print(f"\n[yellow]Next ideas to try:[/yellow]")
+        console.print("\n[yellow]Next ideas to try:[/yellow]")
         for idea in untried:
             console.print(f"  [{idea.priority:.1f}] {idea.title}")
 
-    console.print(f"\n[bold green]Done![/bold green] Tree summary:")
+    console.print("\n[bold green]Done![/bold green] Tree summary:")
     console.print(iter_result["tree_summary"])
 
 
