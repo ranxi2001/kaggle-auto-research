@@ -329,7 +329,8 @@ RESEARCH -> EDA -> FEATURES -> TRAIN -> EVALUATE -> CANDIDATE_READY
                                                      SUBMIT
 ```
 
-详细规则见 [AGENTS.md](AGENTS.md)。
+详细规则见 [AGENTS.md](AGENTS.md)，候选竞赛及启动门槛见
+[docs/competition-watchlist.md](docs/competition-watchlist.md)。
 
 ## 为什么面向 Agent 设计
 

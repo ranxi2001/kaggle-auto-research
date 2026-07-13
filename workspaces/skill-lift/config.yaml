@@ -1,0 +1,32 @@
+competition:
+  deadline: '2026-08-13T06:55:00Z'
+  metric: weighted_skill_lift_rubric
+  metric_direction: maximize
+  name: skill-lift
+  type: llm
+  url: https://www.kaggle.com/competitions/skill-lift
+data:
+  id_column: ''
+  sample_submission: ''
+  target_column: ''
+  test: ''
+  train: data/raw/skillsbench/tasks
+model:
+  cv_folds: 3
+  cv_strategy: paired_with_without_skill
+  primary: static_skill_set
+  seed: 42
+pipeline:
+  iteration_limit: 8
+  stages:
+  - research
+  - skill_design
+  - benchmark
+  - evaluate
+  - package
+submission:
+  auto_submit: false
+  best_threshold: 0.0
+  format: skill_zip
+  max_daily: 1
+  mode: writeup
