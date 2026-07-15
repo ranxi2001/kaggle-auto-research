@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "version": "v007",
+  "verified_at": "2026-07-15T15:54:55Z",
+  "status": "verified_no_blocker",
+  "alignment": {
+    "rows": 3783989,
+    "wells": 773,
+    "feature_row_groups": 773,
+    "duplicate_ids": 0,
+    "raw_suffix_keys_match": true,
+    "v006_parent_values_match": true,
+    "nested_oof_values_match": true,
+    "scores_reproduced": true,
+    "partial_artifacts": 0,
+    "test_predictions_present": false,
+    "submission_present": false
+  },
+  "sha256": {
+    "data/features/v003.parquet": "5f92bada57afaa869d184f8e0848a7ac6042497608cc1c6e4942394dee9487dd",
+    "models/v006/oof_preds.npy": "9ce1ea5505b869fa70ba4cc55b9f7ef3e6c18a63f91ab0f0139807369ab5fdaf",
+    "data/features/v004.parquet": "eb981084eb28a457933903b420ea6c288569e37056f597a1f7b80a8ca8829dd3",
+    "models/v007/run.json": "02f3576dfe751003ff9f82f88976ecdc37688cd2f0ad969d11c5d93f2f65c85e",
+    "models/v007/cv_scores.json": "442eb2818cef5162591e64c7d3773b99ed9d66c1c26b5971f85496a51e586cb5",
+    "models/v007/oof_preds.npy": "7348b5e3a4d22499461aa83bb9426df456a59eaf6973b41061c1ce1a6d3d8b12",
+    "models/v007/oof_std.npy": "ae63429431405adb84537475b0bebcf728dc57f4ba3554ad3822a9551f05cc8d",
+    "models/v007/oof_rows.parquet": "19bbac7ff19c3d46aa617ac0107f948f2bdd8a7794541787de23dff5d2cc775a",
+    "models/v007/model.pkl": "1a2be87c7fbf2c5c6767e0985485626b586a6fa99241a3cf04dafecbda6afb32",
+    "reports/v007_hmm_candidates_by_well.csv": "94223b2367de30031b867b47944cd7ad7eb35cd96b9930815ab4afc00c5431ef",
+    "reports/v007_hmm_diagnostics.json": "e65904cc41bab8eb6a4d965ac5cdf21b36cd647bc30400bb78ebd96eb9fb0b98"
+  },
+  "residual_risks": [
+    "The completed run.json did not itself record parent OOF and output artifact hashes; this audit is the companion provenance record.",
+    "Post-anchor extrapolation uses constant posterior mean rate rather than OU decay, but the tail is at most 13 ft and cannot explain the observed score."
+  ]
+}

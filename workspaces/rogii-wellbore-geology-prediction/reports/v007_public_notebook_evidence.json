@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "competition": "rogii-wellbore-geology-prediction",
+  "evidence_created_at": "2026-07-15T14:31:55.809123Z",
+  "source_retention": "Notebook source is not checked into this evidence artifact. Retrieve the exact version through stable_url or the recorded kernel/version identifiers, then verify the matching endpoint-specific SHA-256.",
+  "skill": {
+    "name": "nvidia-kaggle-skill",
+    "repository": "https://github.com/NVIDIA/nvidia-kaggle",
+    "commit": "410c70b0b076b0d0ca76f10a855e7e337d9bd09b"
+  },
+  "retrieval": {
+    "kaggle_cli_version": "2.2.3",
+    "current_source_api": "GET https://www.kaggle.com/api/v1/kernels/pull",
+    "version_list_api": "kernels.KernelsService/ListKernelVersions",
+    "version_view_api": "kernels.LegacyKernelsService/GetKernelViewModel",
+    "version_source_api": "kernels.KernelsService/GetKernelSessionSource",
+    "version_source_include_outputs": false,
+    "version_query_completed_at": "2026-07-15T14:29:07.618015+00:00"
+  },
+  "hash_conventions": {
+    "metadata_sha256": "SHA-256 of the UTF-8 kernel-metadata.json bytes produced by the Kaggle pull workflow.",
+    "pull_source_sha256": "SHA-256 of the source-file bytes produced by GET /api/v1/kernels/pull for the current version. All six local pull files matched that endpoint during verification.",
+    "version_endpoint_source_sha256": "SHA-256 of the UTF-8 response from GetKernelSessionSource for the recorded script_version_id with includeOutputIfAvailable=false. Kaggle may serialize notebook JSON differently from /kernels/pull, so this hash is intentionally distinct."
+  },
+  "notebooks": [
+    {
+      "ref": "nihilisticneuralnet/9-251-rogii-wellbore-geology-prediction-dwt-based",
+      "title": "9.251 ROGII-Wellbore Geology Prediction: DWT-based",
+      "kernel_id": 119017611,
+      "version_number": 4,
+      "kernel_version_id": 183922831,
+      "script_version_id": 318875876,
+      "version_created_at": "2026-05-13T06:30:45.330Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:28:27.358737+00:00",
+      "local_pulled_at": "2026-07-15T13:44:02.775716+00:00",
+      "stable_url": "https://www.kaggle.com/code/nihilisticneuralnet/9-251-rogii-wellbore-geology-prediction-dwt-based?scriptVersionId=318875876",
+      "code_file": "9-251-rogii-wellbore-geology-prediction-dwt-based.ipynb",
+      "language": "python",
+      "kernel_type": "notebook",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 819,
+      "source_bytes": 56112,
+      "metadata_sha256": "8f6e8b72df235fd2201e90c09dec224fcffb614f110ca4bfd3f4caaed9e5e50b",
+      "pull_source_sha256": "bcac73d029699a5636167bbb0bc01bac7006e8045a155bf8f3ee6036e28083af",
+      "version_endpoint_source_sha256": "bcac73d029699a5636167bbb0bc01bac7006e8045a155bf8f3ee6036e28083af",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": true
+    },
+    {
+      "ref": "amerhu/rogii-wellbore-geology-exact-hmm-smoother",
+      "title": "\ud83d\udee2 ROGII Wellbore Geology | Exact HMM Smoother",
+      "kernel_id": 125974129,
+      "version_number": 2,
+      "kernel_version_id": 196618430,
+      "script_version_id": 332922278,
+      "version_created_at": "2026-07-05T15:46:31.907Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:28:24.999723+00:00",
+      "local_pulled_at": "2026-07-15T13:45:56.575695+00:00",
+      "stable_url": "https://www.kaggle.com/code/amerhu/rogii-wellbore-geology-exact-hmm-smoother?scriptVersionId=332922278",
+      "code_file": "rogii-wellbore-geology-exact-hmm-smoother.ipynb",
+      "language": "python",
+      "kernel_type": "notebook",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 825,
+      "source_bytes": 41378,
+      "metadata_sha256": "4f45601d7c91ba3e0ec03ae2ab202de94f1b78e71aaa0b3686200ff93fc0d85d",
+      "pull_source_sha256": "2321997c8bcbca442d7d7abfc5b9b7eeed251bac8c671b3554b54c9355c231dc",
+      "version_endpoint_source_sha256": "b9a61245ab276b4816b71f46c5393db0acc7c3eb5e699b8bb06577af9e669f28",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": false
+    },
+    {
+      "ref": "lightningv08/lb-7-776-rogii-ridge-sp",
+      "title": "[LB 7.776]rogii-ridge-sp",
+      "kernel_id": 121946411,
+      "version_number": 4,
+      "kernel_version_id": 189124248,
+      "script_version_id": 325217839,
+      "version_created_at": "2026-06-07T16:28:31.187Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:28:27.359865+00:00",
+      "local_pulled_at": "2026-07-15T13:44:14.635713+00:00",
+      "stable_url": "https://www.kaggle.com/code/lightningv08/lb-7-776-rogii-ridge-sp?scriptVersionId=325217839",
+      "code_file": "lb-7-776-rogii-ridge-sp.ipynb",
+      "language": "python",
+      "kernel_type": "notebook",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 730,
+      "source_bytes": 68271,
+      "metadata_sha256": "29dd4d5926e48732f1b8b293efcb442f576842fe8dfd73a15bfcacd686772970",
+      "pull_source_sha256": "d8237531dea2a1b733d1e2255ba9087bafa3bd55f63771c91bdb9efa5809832e",
+      "version_endpoint_source_sha256": "98735cf38f92a6ee9fdc930a9c3119b21120b737abd6e63f8865797f31c4ae48",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": false
+    },
+    {
+      "ref": "mitchgansemer/drift-targeting-ncc-tree-based-rogii-wellbore",
+      "title": "Drift Targeting + NCC: Tree-based ROGII Wellbore",
+      "kernel_id": 120013393,
+      "version_number": 10,
+      "kernel_version_id": 186888331,
+      "script_version_id": 322521377,
+      "version_created_at": "2026-05-27T13:20:10.047Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:28:31.482178+00:00",
+      "local_pulled_at": "2026-07-15T13:44:14.635713+00:00",
+      "stable_url": "https://www.kaggle.com/code/mitchgansemer/drift-targeting-ncc-tree-based-rogii-wellbore?scriptVersionId=322521377",
+      "code_file": "drift-targeting-ncc-tree-based-rogii-wellbore.ipynb",
+      "language": "python",
+      "kernel_type": "notebook",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 698,
+      "source_bytes": 67822,
+      "metadata_sha256": "18b5bf18bda6c034677dfe4c55b6185f92186841930d45ae7ea5537387b76e56",
+      "pull_source_sha256": "7db8e0b50b8d1e613954c828ebd0fdd8a76d5df82ffa734ac4c64f35ca8748a4",
+      "version_endpoint_source_sha256": "513e5859ba40faeb965d0c2e651ebaf46b9a537749ed533e11419eb1ea00a204",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": false
+    },
+    {
+      "ref": "sunnywu27/rogii-wellbore-tvt-physical-model",
+      "title": "ROGII Wellbore TVT \u2014 Physical Model",
+      "kernel_id": 121059060,
+      "version_number": 12,
+      "kernel_version_id": 187716528,
+      "script_version_id": 323501089,
+      "version_created_at": "2026-05-31T18:55:42.873Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:28:33.551888+00:00",
+      "local_pulled_at": "2026-07-15T13:44:14.625713+00:00",
+      "stable_url": "https://www.kaggle.com/code/sunnywu27/rogii-wellbore-tvt-physical-model?scriptVersionId=323501089",
+      "code_file": "rogii-wellbore-tvt-physical-model.py",
+      "language": "python",
+      "kernel_type": "script",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 647,
+      "source_bytes": 11142,
+      "metadata_sha256": "f89b652898a5a4e6a687445c78ce7d75c08f5a8e9913399c15f90409a55ffc90",
+      "pull_source_sha256": "0fde93243068a7ccf766ac0f270c489ecc8d2fd4edb4dbeeccaf51853bdb220f",
+      "version_endpoint_source_sha256": "0fde93243068a7ccf766ac0f270c489ecc8d2fd4edb4dbeeccaf51853bdb220f",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": true
+    },
+    {
+      "ref": "pilkwang/rogii-eda-target-free-alignment-for-tvt",
+      "title": "\ud83d\udee2\ufe0f ROGII EDA + Target-Free Alignment for TVT",
+      "kernel_id": 118068629,
+      "version_number": 57,
+      "kernel_version_id": 188775807,
+      "script_version_id": 324752534,
+      "version_created_at": "2026-06-05T12:29:38.887Z",
+      "version_status": "COMPLETE",
+      "version_queried_at": "2026-07-15T14:29:07.618015+00:00",
+      "local_pulled_at": "2026-07-15T13:44:15.825712+00:00",
+      "stable_url": "https://www.kaggle.com/code/pilkwang/rogii-eda-target-free-alignment-for-tvt?scriptVersionId=324752534",
+      "code_file": "rogii-eda-target-free-alignment-for-tvt.ipynb",
+      "language": "python",
+      "kernel_type": "notebook",
+      "competition_sources": [
+        "rogii-wellbore-geology-prediction"
+      ],
+      "metadata_bytes": 896,
+      "source_bytes": 499642,
+      "metadata_sha256": "2a56a2c8776e0ebee48d2b9bbebf21e312a75504fc7ffbce1be515affddcde19",
+      "pull_source_sha256": "8c6491a59a1409c8ac492b8a90d090785627690acd0f9a0401ef568ba23f69aa",
+      "version_endpoint_source_sha256": "0699abd9fad092781a7e245bbe89a7d4f3b80ba982a1e22585fd269437c524ea",
+      "pull_source_matches_current_rest": true,
+      "source_serializations_match": false
+    }
+  ]
+}

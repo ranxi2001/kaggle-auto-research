@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "version": "v009",
+  "verified_at": "2026-07-15T17:18:14Z",
+  "status": "verified_no_blocker",
+  "decision": "promising_continue",
+  "alignment": {
+    "rows": 3783989,
+    "wells": 773,
+    "duplicate_ids": 0,
+    "finite_target": true,
+    "finite_oof": true,
+    "pooled_rmse_recomputed": 11.633993821629351,
+    "pooled_rmse_recorded": 11.633993821629351,
+    "fold_scores_recomputed": [
+      11.49555437282769,
+      10.897975419727446,
+      11.350479940415482,
+      12.171255420785236,
+      12.200958225662788
+    ],
+    "fold_scores_exact": true,
+    "folds_better_than_v006": 5
+  },
+  "integrity": {
+    "input_hashes_stable": true,
+    "raw_test_fingerprint_stable": true,
+    "output_hashes_match_run": true,
+    "all_six_fits_audit_15_unique_supports": true,
+    "all_direct_sse_checks_pass": true,
+    "alignment_violations": 0,
+    "fold_violations": 0,
+    "donor_provenance_violations": 0,
+    "nonfinite_violations": 0,
+    "direct_sse_violations": 0,
+    "partial_artifacts": 0,
+    "test_predictions_present": false,
+    "submission_present": false,
+    "submitted": false
+  },
+  "sha256": {
+    "scripts/rogii_residual_simplex.py": "c3f6a44d10a2b5b2a9a042a2825bfc3eb1b9715e3b9e52e3d7eeae1acc448fde",
+    "reports/v009_cross_fitted_residual_simplex_plan.md": "09b927da28074261d7625197886b2e8f63290d63bf6108dcd1993be85d28479d",
+    "models/v009/run.json": "ebab6349f8efedf765c43a1c1df6e6f47d070fe120da5b959cdf069a7d2e7b4d",
+    "models/v009/cv_scores.json": "f30d4e70b5851b8f92583542936ae112d0d40f0cabc242568e461dac6ea09701",
+    "models/v009/oof_preds.npy": "b3956483e28e8a68ccbfe237d7c0f8d660735986091ea3a3991b59d41f7e3c8f",
+    "models/v009/oof_rows.parquet": "a6b472e34e0e191ec715f7f60a2ad5577983cdf0f85e0c8e1c4f850df0904567",
+    "models/v009/model.pkl": "2817b3befee4d0db041be18bc51d24a660a5d27ed4d355112cb859a3104fdaff",
+    "models/v009/feature_list.txt": "69c38602f2678a5261477320f59bdeb39e93f06beb41e2e42e9dbb51dfb45eae",
+    "models/v009/importance.csv": "ad140de9935733d023fb221cc6f72230db6d74c2233c1d2bf17477bed1802879",
+    "reports/v009_residual_simplex_summary.md": "4d1a46ee73ad24eab24ecd0223bb2bce19242a2cf38358a6ccdaefcaaa1e0934",
+    "reports/v009_residual_simplex_folds.csv": "6e48f8260da369a205af71da0c0f90b1dac4e7178e87bd842aa76b1603d72b8f",
+    "reports/v009_residual_simplex_by_well.csv": "661a758ae3f145b99cf7da5692ab23f78e22ad8552f320b10a32ffd95350d582",
+    "reports/v009_residual_simplex_diagnostics.json": "cb0ab306d6f07c6ee6d842f25b6e87d881a77f2ed748a01a3137e4c69b6a2ee3"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "competition": "rogii-wellbore-geology-prediction",
-  "updated_at": "2026-07-14T17:28:15Z",
+  "updated_at": "2026-07-15T17:45:10Z",
   "ideas": [
     {"id": "beam_alignment", "status": "validated", "result_version": "v002"},
     {"id": "regularized_residual_lgbm", "status": "validated", "result_version": "v003"},
@@ -9,6 +9,10 @@
     {"id": "leaderboard_calibration", "status": "completed", "result_version": "v004", "submission_ref": 54653094, "rank": 3628},
     {"id": "latent_surface_particle_filter", "status": "submitted_below_top10", "result_version": "v006", "invalid_attempt_version": "v005", "overall": 12.184563279387687, "public_lb": 10.693, "rank": 2940, "submission_ref": 54693365, "reason": "v005 was invalidated because missing suffix GR was treated as observed evidence; corrected v006 improved public RMSE by 27.17% versus v004 but remains outside top 10%"},
     {"id": "latent_surface_leaderboard_calibration", "status": "completed", "result_version": "v006", "local_cv": 12.184563279387687, "public_lb": 10.693, "local_minus_public": 1.491563279387687, "submission_ref": 54693365},
-    {"id": "latent_surface_hmm_smoother", "status": "pending", "reason": "v006 validates the latent-surface direction but public RMSE 10.693 remains above the 7.120 top-10% boundary; add full forward-backward smoothing and windowed GR registration"}
+    {"id": "latent_surface_hmm_smoother", "status": "exhausted", "result_version": "v007", "overall": 21.596877007088995, "folds_better_than_v006": 0, "fallback_wells": 0, "selected_boundary_wells": 186, "reason": "pure HMM dynamics removed effective v006 anchoring; repeated GR motifs produced large confident drift"},
+    {"id": "latent_surface_hmm_nested_shrink", "status": "validated_in_stack", "parent_version": "v007", "result_version": "v009", "diagnostic_overall": 11.643301124869287, "reason": "the predeclared v009 stack confirmed that a 0.147-0.173 HMM shrink improves all five outer folds"},
+    {"id": "fold_safe_formation_spatial_stack", "status": "exhausted", "result_version": "v008", "overall": 12.178672471400866, "folds_better_than_v006": 3, "reason": "fold-safe local planes and nested donor exclusion were valid, but the stack improved v006 by only 0.005891 RMSE and failed the fixed promising gate"},
+    {"id": "cross_fitted_hmm_formation_residual_simplex", "status": "promising_continue", "result_version": "v009", "parents": ["v006", "v007", "v008"], "overall": 11.633993821629351, "folds_better_than_v006": 5, "reason": "strict outer-fold weights confirmed complementary HMM signal and a small formation contribution, but the result missed the 10.95 candidate gate"},
+    {"id": "progress_shaped_hmm_front20", "status": "exhausted", "result_version": "v010", "parent_version": "v009", "overall": 11.618123708419397, "folds_better_than_v009": 5, "absolute_gain": 0.015870113209954795, "candidate_eligible": false, "eligible_as_parent_run": false, "reason": "adaptive front20 shaping improved only 0.136%, failed the fixed 11.50 gate, and its run has documented artifact-contract gaps; end this direction"}
   ]
 }

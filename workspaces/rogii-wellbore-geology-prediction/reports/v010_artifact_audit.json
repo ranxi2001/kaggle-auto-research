@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "version": "v010",
+  "status": "superseded_contract_incomplete",
+  "decision": "exhausted",
+  "superseded_by": "reports/v010_independent_artifact_audit.json",
+  "contract_gaps": [
+    "The in-run audit was published before the staging directory commit, so a late BaseException could have left a false verified marker.",
+    "The in-run audit did not condition verified status on zero integrity violations.",
+    "models/v010/feature_list.txt omits the ten outer-specific nested formation input columns.",
+    "models/v010/run.json omits required reproduction, git, splitter, seed, ID, and feature-path provenance fields."
+  ],
+  "sha256": {
+    "scripts/rogii_progress_simplex.py": "c5cd5c01b8054198757097a292f1957a4bff400a509ca022f53f92e8da7edf81",
+    "reports/v010_progress_shaped_hmm_plan.md": "ff6be101ca31fae7e1afe0601016ed479eb1d69731645878b4fb333b8e767862",
+    "models/v010/run.json": "5e8a7b43ee707a11cb4c73893c42960b6d7a553eea92ea8b86322867975899ff",
+    "models/v010/cv_scores.json": "44cf60e4b63779fe78e9caeefe126b7eae7ef3cc08e73b2669b751738be9ff37",
+    "models/v010/oof_preds.npy": "8bf1c2ec76d418e3cf24c4c074d4d6f64b5d56b390b59190f3e96a57211ac679",
+    "models/v010/oof_rows.parquet": "a6b472e34e0e191ec715f7f60a2ad5577983cdf0f85e0c8e1c4f850df0904567",
+    "models/v010/model.pkl": "7bb8d21b3b555fe2b9fd67fcc1df8e5bf85c3a36c1e3b2ce44d5d9c6419ed991",
+    "models/v010/feature_list.txt": "37d23f3172b4e38c86c3d97e97b712ca13248db01deb70b6c0db89eb44ef8b8f",
+    "models/v010/importance.csv": "65820ae5627ef96abebe1445ec10f22e3efbf3fc4aff0c2cddb009c933c67a85",
+    "reports/v010_progress_simplex_summary.md": "2b17743d666f3e05212de3f994ab55b95f32e16a0b6c7031ce510bfe5279e8fd",
+    "reports/v010_progress_simplex_folds.csv": "74aaf41c3be6ebab43f1d42d491033691966a391a2a070278fbcc8b74013f3e0",
+    "reports/v010_progress_simplex_by_well.csv": "54e44eef9b5fc7a584f1df2814160f45573aeca5f8fd1b1ad9aa852f0d72a6ab",
+    "reports/v010_progress_simplex_diagnostics.json": "42540eab4a76b074143f950829a011c7f1fa46d3e7ee2066dac7f913a36173e5"
+  }
+}

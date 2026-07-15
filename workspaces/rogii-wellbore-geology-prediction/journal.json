@@ -2,7 +2,7 @@
   "competition": "rogii-wellbore-geology-prediction",
   "metric": "rmse",
   "direction": "minimize",
-  "updated_at": "2026-07-14T17:28:15Z",
+  "updated_at": "2026-07-15T17:45:10Z",
   "best_version": "v006",
   "experiments": [
     {"version": "v001", "parent": null, "status": "completed", "overall": 15.909852870734554},
@@ -10,7 +10,11 @@
     {"version": "v003", "parent": "v002", "status": "completed", "overall": 14.787502061307364},
     {"version": "v004", "parent": "v003", "status": "submitted", "overall": 14.74375058468573, "public_lb": 14.683, "rank": 3628, "submission_ref": 54653094},
     {"version": "v005", "parent": "v004", "status": "failed", "error": "SIGTERM after audit found interpolated missing GR was incorrectly treated as observed evidence", "processed_wells": 230, "total_wells": 773, "partial_feature_valid": false},
-    {"version": "v006", "parent": "v004", "status": "submitted", "overall": 12.184563279387687, "decision": "candidate_ready", "folds_better_than_v004": 5, "final_candidate": "pf_scale_12_hold_0p2", "fallback_wells": 0, "supersedes": "v005", "kernel": "ranxi169/kar-rogii-v006-latent-surface-particle-filter", "kernel_version": 1, "kernel_status": "complete", "submission_ref": 54693365, "submission_status": "complete", "public_lb": 10.693, "rank": 2940, "submitted": true}
+    {"version": "v006", "parent": "v004", "status": "submitted", "overall": 12.184563279387687, "decision": "candidate_ready", "folds_better_than_v004": 5, "final_candidate": "pf_scale_12_hold_0p2", "fallback_wells": 0, "supersedes": "v005", "kernel": "ranxi169/kar-rogii-v006-latent-surface-particle-filter", "kernel_version": 1, "kernel_status": "complete", "submission_ref": 54693365, "submission_status": "complete", "public_lb": 10.693, "rank": 2940, "submitted": true},
+    {"version": "v007", "parent": "v006", "status": "completed", "overall": 21.596877007088995, "decision": "exhausted", "folds_better_than_v006": 0, "final_candidate": "hmm_wr21_slow", "pure_candidate_scores": {"hmm_wr21_slow": 21.596877007088995, "hmm_wr21_flex": 29.487149542721077}, "fallback_wells": 0, "selected_boundary_wells": 186, "test_predictions_saved": false, "submitted": false},
+    {"version": "v008", "parent": "v006", "status": "completed", "overall": 12.178672471400866, "decision": "exhausted", "folds_better_than_v006": 3, "final_candidate": "sp_nnls_v006", "standalone_scores": {"sp_plane_ancc_k10": 41.905122, "sp_plane_best6_k10": 39.898377}, "inference_failures": 0, "donor_fold_violations": 0, "self_donor_violations": 0, "test_predictions_saved": false, "submitted": false},
+    {"version": "v009", "parent": "v006", "secondary_parents": ["v007", "v008"], "status": "completed", "overall": 11.633993821629351, "decision": "promising_continue", "folds_better_than_v006": 5, "final_candidate": "four_stream_residual_simplex", "inherited_boundary_wells": 186, "integrity_violations": 0, "test_predictions_saved": false, "submitted": false},
+    {"version": "v010", "parent": "v009", "status": "completed_contract_incomplete", "overall": 11.618123708419397, "decision": "exhausted", "adaptive_diagnostic": true, "folds_better_than_v009": 5, "absolute_gain_over_v009": 0.015870113209954795, "integrity_violations": 0, "candidate_eligible": false, "eligible_as_parent_run": false, "test_predictions_saved": false, "submitted": false, "audit": "reports/v010_independent_artifact_audit.json"}
   ],
   "leaderboard": {
     "teams": 4909,

@@ -1,0 +1,974 @@
+{
+  "version": "v008",
+  "intended_use": "target-free runtime, memory, provenance, and donor-isolation gate",
+  "target_read": false,
+  "fixed_settings": {
+    "formations": [
+      "ANCC",
+      "ASTNU",
+      "ASTNL",
+      "EGFDU",
+      "EGFDL",
+      "BUDA"
+    ],
+    "streams": [
+      "parent_v006",
+      "sp_plane_ancc_k10",
+      "sp_plane_best6_k10"
+    ],
+    "donor_summary": "per-well finite column median",
+    "complete_donor_rule": "finite median X,Y and all six formations",
+    "coordinate_center": "eligible donor arithmetic mean after same-ID exclusion",
+    "coordinate_scale": "eligible donor population std",
+    "coordinate_std_ddof": 0,
+    "distance": "Euclidean in donor-standardized X/Y",
+    "neighbors": 10,
+    "weight_formula": "raw=1/max(distance,1e-6), normalized per query",
+    "distance_epsilon": 1e-06,
+    "design_columns": [
+      "(X_neighbor-X_query)/X_std",
+      "(Y_neighbor-Y_query)/Y_std",
+      "1"
+    ],
+    "slope_ridge": 1e-08,
+    "ridge_penalty": "two slope diagonal entries only; intercept unpenalized",
+    "zero_distance": "distance clamped to epsilon; no direct-value fallback",
+    "linear_solver": "numpy.linalg.solve; no pseudoinverse or constant fallback",
+    "query_chunk_rows": 4096,
+    "ancc_calibration": "last 512 visible-prefix rows",
+    "best6_prospective_calibration": "visible-prefix rows [-640:-128]",
+    "best6_prospective_holdout": "last 128 visible-prefix rows",
+    "best6_final_calibration": "last 512 visible-prefix rows",
+    "formation_tie_break": "declared FORMATIONS order",
+    "simplex": "p0=v006; enumerate exact 2D triangle interior, edges, vertices",
+    "simplex_intercept": false,
+    "simplex_row_sampling": false,
+    "parent_oof_alignment": "exact ID, well, row index, canonical fold, and suffix target",
+    "parent_test_alignment": "locked v006 test_preds mapped by sample id",
+    "minimum_visible_prefix_rows": 851,
+    "smoke_query_rows": 168705,
+    "full_nested_query_rows": 21393545,
+    "projection_safety_factor": 2.0
+  },
+  "required_smoke_wells": 6,
+  "selected_wells": [
+    {
+      "well": "fba7683c",
+      "fold": 2,
+      "suffix_rows": 407
+    },
+    {
+      "well": "fef8af96",
+      "fold": 3,
+      "suffix_rows": 3826
+    },
+    {
+      "well": "8bb9c1e6",
+      "fold": 1,
+      "suffix_rows": 4546
+    },
+    {
+      "well": "722cf0d8",
+      "fold": 3,
+      "suffix_rows": 5143
+    },
+    {
+      "well": "ff8bb73a",
+      "fold": 3,
+      "suffix_rows": 5927
+    },
+    {
+      "well": "ea3a0e38",
+      "fold": 1,
+      "suffix_rows": 10052
+    }
+  ],
+  "expected_selection": [
+    {
+      "well": "fba7683c",
+      "fold": 2,
+      "suffix_rows": 407
+    },
+    {
+      "well": "fef8af96",
+      "fold": 3,
+      "suffix_rows": 3826
+    },
+    {
+      "well": "8bb9c1e6",
+      "fold": 1,
+      "suffix_rows": 4546
+    },
+    {
+      "well": "722cf0d8",
+      "fold": 3,
+      "suffix_rows": 5143
+    },
+    {
+      "well": "ff8bb73a",
+      "fold": 3,
+      "suffix_rows": 5927
+    },
+    {
+      "well": "ea3a0e38",
+      "fold": 1,
+      "suffix_rows": 10052
+    }
+  ],
+  "selected_query_rows": [
+    {
+      "well": "fba7683c",
+      "query_rows": 5235
+    },
+    {
+      "well": "fef8af96",
+      "query_rows": 22330
+    },
+    {
+      "well": "8bb9c1e6",
+      "query_rows": 25930
+    },
+    {
+      "well": "722cf0d8",
+      "query_rows": 28915
+    },
+    {
+      "well": "ff8bb73a",
+      "query_rows": 32835
+    },
+    {
+      "well": "ea3a0e38",
+      "query_rows": 53460
+    }
+  ],
+  "smoke_contexts_per_well": 5,
+  "unique_donor_contexts": 15,
+  "donor_context_audit": [
+    {
+      "excluded_folds": [
+        1
+      ],
+      "expected_donor_folds": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "requested_donor_wells": 618,
+      "eligible_donor_wells": 612,
+      "incomplete_donor_wells": [
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "9dfff011",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        2
+      ],
+      "expected_donor_folds": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "requested_donor_wells": 618,
+      "eligible_donor_wells": 611,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        3
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "requested_donor_wells": 619,
+      "eligible_donor_wells": 614,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "81bf5923",
+        "9dfff011",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        4
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "requested_donor_wells": 618,
+      "eligible_donor_wells": 612,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "9dfff011",
+        "a8ed028a"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        5
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "requested_donor_wells": 619,
+      "eligible_donor_wells": 611,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "9dfff011",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        1,
+        2
+      ],
+      "expected_donor_folds": [
+        3,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        3,
+        4,
+        5
+      ],
+      "requested_donor_wells": 463,
+      "eligible_donor_wells": 458,
+      "incomplete_donor_wells": [
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        1,
+        3
+      ],
+      "expected_donor_folds": [
+        2,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        2,
+        4,
+        5
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 461,
+      "incomplete_donor_wells": [
+        "81bf5923",
+        "9dfff011",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        1,
+        4
+      ],
+      "expected_donor_folds": [
+        2,
+        3,
+        5
+      ],
+      "actual_donor_folds": [
+        2,
+        3,
+        5
+      ],
+      "requested_donor_wells": 463,
+      "eligible_donor_wells": 459,
+      "incomplete_donor_wells": [
+        "4c2208f5",
+        "727a3a10",
+        "9dfff011",
+        "a8ed028a"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        1,
+        5
+      ],
+      "expected_donor_folds": [
+        2,
+        3,
+        4
+      ],
+      "actual_donor_folds": [
+        2,
+        3,
+        4
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 458,
+      "incomplete_donor_wells": [
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "9dfff011",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        2,
+        3
+      ],
+      "expected_donor_folds": [
+        1,
+        4,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        4,
+        5
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 460,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "81bf5923",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        2,
+        4
+      ],
+      "expected_donor_folds": [
+        1,
+        3,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        3,
+        5
+      ],
+      "requested_donor_wells": 463,
+      "eligible_donor_wells": 458,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "a8ed028a"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        2,
+        5
+      ],
+      "expected_donor_folds": [
+        1,
+        3,
+        4
+      ],
+      "actual_donor_folds": [
+        1,
+        3,
+        4
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 457,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "81bf5923",
+        "a8ed028a",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        3,
+        4
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        5
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        5
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 461,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "9dfff011"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        3,
+        5
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        4
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        4
+      ],
+      "requested_donor_wells": 465,
+      "eligible_donor_wells": 460,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "81bf5923",
+        "9dfff011",
+        "d7eb0be8"
+      ],
+      "donor_fold_violations": []
+    },
+    {
+      "excluded_folds": [
+        4,
+        5
+      ],
+      "expected_donor_folds": [
+        1,
+        2,
+        3
+      ],
+      "actual_donor_folds": [
+        1,
+        2,
+        3
+      ],
+      "requested_donor_wells": 464,
+      "eligible_donor_wells": 458,
+      "incomplete_donor_wells": [
+        "03a935ae",
+        "1b1eba53",
+        "4c2208f5",
+        "727a3a10",
+        "9dfff011",
+        "a8ed028a"
+      ],
+      "donor_fold_violations": []
+    }
+  ],
+  "smoke_query_rows": 168705,
+  "full_nested_query_rows": 21393545,
+  "total_suffix_rows": 3783989,
+  "total_training_wells": 773,
+  "context_build_seconds": 5.454087620999417,
+  "tree_build_seconds": 5.454087620999417,
+  "query_seconds": 2.9845943370000896,
+  "projected_full_hours": 0.21329534824910443,
+  "projection_safety_factor": 2.0,
+  "peak_rss_gib": 0.2917137145996094,
+  "max_projected_hours": 1.0,
+  "max_peak_rss_gib": 4.0,
+  "eligible_for_full_cv": true,
+  "source_path": "/home/ranxi/projects/kaggel-auto-research/workspaces/rogii-wellbore-geology-prediction/scripts/rogii_formation_spatial.py",
+  "plan_path": "/home/ranxi/projects/kaggel-auto-research/workspaces/rogii-wellbore-geology-prediction/reports/v008_formation_spatial_plan.md",
+  "source_sha256": "78995581183e57ca50ecb309b4b105075f257f710bb254729860c4762a6472ff",
+  "source_sha256_end": "78995581183e57ca50ecb309b4b105075f257f710bb254729860c4762a6472ff",
+  "plan_sha256": "8a5b203aff78ee22240c9dfa6e82b46fbd305748898a3a42034f146125c6a034",
+  "plan_sha256_end": "8a5b203aff78ee22240c9dfa6e82b46fbd305748898a3a42034f146125c6a034",
+  "fold_manifest_sha256": "25847e5c05fad652e79dfd2280c8615dec8c528f12acd88ab038533dc7c998fe",
+  "fold_manifest_sha256_end": "25847e5c05fad652e79dfd2280c8615dec8c528f12acd88ab038533dc7c998fe",
+  "input_sha256_start": {
+    "config": "1c32429b83b9b8fa4572703758dca80384287e915281c0e28447dceb651a6a2c",
+    "fold_manifest": "25847e5c05fad652e79dfd2280c8615dec8c528f12acd88ab038533dc7c998fe",
+    "plan": "8a5b203aff78ee22240c9dfa6e82b46fbd305748898a3a42034f146125c6a034",
+    "source": "78995581183e57ca50ecb309b4b105075f257f710bb254729860c4762a6472ff",
+    "parent_source": "4fd0974cd45951d321986ced758aacb609a001b3d5e699137175d3cdd5b06f9f",
+    "parent_cv_scores": "3c4db778c2be86992a41ef68de65b465ebcb9eaaa04c1a124a8bede565bd5880",
+    "parent_run": "8373e5900aeb206b51b7caed068f515a8bfae404d21881d58b994e4bb7569743",
+    "parent_model": "cfd1b98ad82369cf08452d3971294b876bd18469ecd17cbc8430c214c327b4ed",
+    "parent_oof_predictions": "9ce1ea5505b869fa70ba4cc55b9f7ef3e6c18a63f91ab0f0139807369ab5fdaf",
+    "parent_oof_rows": "19bbac7ff19c3d46aa617ac0107f948f2bdd8a7794541787de23dff5d2cc775a",
+    "parent_test_predictions": "cac46b9ee983cca4e96a4723b0e4dee82507fc1418a4c5d60c62047279b56470",
+    "parent_feature": "5f92bada57afaa869d184f8e0848a7ac6042497608cc1c6e4942394dee9487dd",
+    "sample_submission": "7498f19ba1be281328c31a39044d4ba5f84e71c8f4115c613b5531f42aaff85a"
+  },
+  "input_sha256_end": {
+    "config": "1c32429b83b9b8fa4572703758dca80384287e915281c0e28447dceb651a6a2c",
+    "fold_manifest": "25847e5c05fad652e79dfd2280c8615dec8c528f12acd88ab038533dc7c998fe",
+    "plan": "8a5b203aff78ee22240c9dfa6e82b46fbd305748898a3a42034f146125c6a034",
+    "source": "78995581183e57ca50ecb309b4b105075f257f710bb254729860c4762a6472ff",
+    "parent_source": "4fd0974cd45951d321986ced758aacb609a001b3d5e699137175d3cdd5b06f9f",
+    "parent_cv_scores": "3c4db778c2be86992a41ef68de65b465ebcb9eaaa04c1a124a8bede565bd5880",
+    "parent_run": "8373e5900aeb206b51b7caed068f515a8bfae404d21881d58b994e4bb7569743",
+    "parent_model": "cfd1b98ad82369cf08452d3971294b876bd18469ecd17cbc8430c214c327b4ed",
+    "parent_oof_predictions": "9ce1ea5505b869fa70ba4cc55b9f7ef3e6c18a63f91ab0f0139807369ab5fdaf",
+    "parent_oof_rows": "19bbac7ff19c3d46aa617ac0107f948f2bdd8a7794541787de23dff5d2cc775a",
+    "parent_test_predictions": "cac46b9ee983cca4e96a4723b0e4dee82507fc1418a4c5d60c62047279b56470",
+    "parent_feature": "5f92bada57afaa869d184f8e0848a7ac6042497608cc1c6e4942394dee9487dd",
+    "sample_submission": "7498f19ba1be281328c31a39044d4ba5f84e71c8f4115c613b5531f42aaff85a"
+  },
+  "train_data_fingerprint": "0bddbae8636398507afb2566bd6a6e0855b72865d5f17aecff979e31a2c2625d",
+  "train_data_fingerprint_end": "0bddbae8636398507afb2566bd6a6e0855b72865d5f17aecff979e31a2c2625d",
+  "test_data_fingerprint": "7f975616807a5c62e002f06da76fc36ed6b68d8216027e052525eef9ad3cd724",
+  "test_data_fingerprint_end": "7f975616807a5c62e002f06da76fc36ed6b68d8216027e052525eef9ad3cd724",
+  "data_fingerprint_algorithm": "sha256(sorted_file_name_nul_file_bytes_nul)",
+  "hashes_stable": true,
+  "records": [
+    {
+      "well": "fba7683c",
+      "fold": 2,
+      "suffix_rows": 407,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1,
+            2
+          ],
+          "query_rows": 1047,
+          "runtime_seconds": 0.03823,
+          "selected_formation": "EGFDU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            2
+          ],
+          "query_rows": 1047,
+          "runtime_seconds": 0.021814,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            2,
+            3
+          ],
+          "query_rows": 1047,
+          "runtime_seconds": 0.016033,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            2,
+            4
+          ],
+          "query_rows": 1047,
+          "runtime_seconds": 0.016581,
+          "selected_formation": "EGFDU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            2,
+            5
+          ],
+          "query_rows": 1047,
+          "runtime_seconds": 0.017281,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    },
+    {
+      "well": "fef8af96",
+      "fold": 3,
+      "suffix_rows": 3826,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1,
+            3
+          ],
+          "query_rows": 4466,
+          "runtime_seconds": 0.093369,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            2,
+            3
+          ],
+          "query_rows": 4466,
+          "runtime_seconds": 0.069236,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            3
+          ],
+          "query_rows": 4466,
+          "runtime_seconds": 0.093648,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            3,
+            4
+          ],
+          "query_rows": 4466,
+          "runtime_seconds": 0.075313,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            3,
+            5
+          ],
+          "query_rows": 4466,
+          "runtime_seconds": 0.073525,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    },
+    {
+      "well": "8bb9c1e6",
+      "fold": 1,
+      "suffix_rows": 4546,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1
+          ],
+          "query_rows": 5186,
+          "runtime_seconds": 0.128756,
+          "selected_formation": "EGFDU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            1,
+            2
+          ],
+          "query_rows": 5186,
+          "runtime_seconds": 0.078435,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            1,
+            3
+          ],
+          "query_rows": 5186,
+          "runtime_seconds": 0.076668,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            1,
+            4
+          ],
+          "query_rows": 5186,
+          "runtime_seconds": 0.078562,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            1,
+            5
+          ],
+          "query_rows": 5186,
+          "runtime_seconds": 0.081969,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    },
+    {
+      "well": "722cf0d8",
+      "fold": 3,
+      "suffix_rows": 5143,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1,
+            3
+          ],
+          "query_rows": 5783,
+          "runtime_seconds": 0.090243,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            2,
+            3
+          ],
+          "query_rows": 5783,
+          "runtime_seconds": 0.091991,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            3
+          ],
+          "query_rows": 5783,
+          "runtime_seconds": 0.147972,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            3,
+            4
+          ],
+          "query_rows": 5783,
+          "runtime_seconds": 0.091301,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            3,
+            5
+          ],
+          "query_rows": 5783,
+          "runtime_seconds": 0.093415,
+          "selected_formation": "ASTNU",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    },
+    {
+      "well": "ff8bb73a",
+      "fold": 3,
+      "suffix_rows": 5927,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1,
+            3
+          ],
+          "query_rows": 6567,
+          "runtime_seconds": 0.102126,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            2,
+            3
+          ],
+          "query_rows": 6567,
+          "runtime_seconds": 0.096548,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            3
+          ],
+          "query_rows": 6567,
+          "runtime_seconds": 0.15432,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            3,
+            4
+          ],
+          "query_rows": 6567,
+          "runtime_seconds": 0.106481,
+          "selected_formation": "BUDA",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            3,
+            5
+          ],
+          "query_rows": 6567,
+          "runtime_seconds": 0.104364,
+          "selected_formation": "ANCC",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    },
+    {
+      "well": "ea3a0e38",
+      "fold": 1,
+      "suffix_rows": 10052,
+      "contexts": [
+        {
+          "outer_fold": 1,
+          "excluded_folds": [
+            1
+          ],
+          "query_rows": 10692,
+          "runtime_seconds": 0.249296,
+          "selected_formation": "EGFDL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 2,
+          "excluded_folds": [
+            1,
+            2
+          ],
+          "query_rows": 10692,
+          "runtime_seconds": 0.161839,
+          "selected_formation": "EGFDL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 3,
+          "excluded_folds": [
+            1,
+            3
+          ],
+          "query_rows": 10692,
+          "runtime_seconds": 0.164601,
+          "selected_formation": "EGFDL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 4,
+          "excluded_folds": [
+            1,
+            4
+          ],
+          "query_rows": 10692,
+          "runtime_seconds": 0.163449,
+          "selected_formation": "EGFDL",
+          "same_id_donors_excluded": 0
+        },
+        {
+          "outer_fold": 5,
+          "excluded_folds": [
+            1,
+            5
+          ],
+          "query_rows": 10692,
+          "runtime_seconds": 0.185256,
+          "selected_formation": "ASTNL",
+          "same_id_donors_excluded": 0
+        }
+      ]
+    }
+  ],
+  "failures": []
+}

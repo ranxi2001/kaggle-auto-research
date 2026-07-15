@@ -1,0 +1,140 @@
+{
+  "version": "v007",
+  "intended_use": "target-free runtime and memory gate only; never select candidates",
+  "target_read": false,
+  "source_sha256": "589c137018c91bc9ea1ea5d181c19778f1111406c411df772b2c76779f51c8b5",
+  "source_sha256_end": "589c137018c91bc9ea1ea5d181c19778f1111406c411df772b2c76779f51c8b5",
+  "parent_source_sha256": "4fd0974cd45951d321986ced758aacb609a001b3d5e699137175d3cdd5b06f9f",
+  "parent_source_sha256_end": "4fd0974cd45951d321986ced758aacb609a001b3d5e699137175d3cdd5b06f9f",
+  "parent_version": "v006",
+  "parent_candidate": "pf_scale_12_hold_0p2",
+  "parent_particles": 500,
+  "parent_seeds": 32,
+  "candidate_grid": [
+    {
+      "name": "hmm_wr21_slow",
+      "momentum": 0.998,
+      "rate_noise": 0.002,
+      "position_noise": 0.175,
+      "start_sigma": 0.75,
+      "initial_rate_sigma": 0.01
+    },
+    {
+      "name": "hmm_wr21_flex",
+      "momentum": 0.998,
+      "rate_noise": 0.004,
+      "position_noise": 0.35,
+      "start_sigma": 0.75,
+      "initial_rate_sigma": 0.02
+    }
+  ],
+  "fixed_settings": {
+    "block_size": 21,
+    "offset_step": 0.5,
+    "initial_half_width": 64.0,
+    "expanded_half_width": 128.0,
+    "rate_states": 33,
+    "base_rate_span": 0.12,
+    "emission_df": 4.0,
+    "emission_temper": 20.0,
+    "out_of_support_loss": 12.0,
+    "calibration_slope_min": 0.25,
+    "calibration_slope_max": 2.5,
+    "calibration_huber_multiplier": 1.5,
+    "calibration_scale_min": 8.0,
+    "calibration_scale_max": 60.0,
+    "calibration_default_scale": 30.0,
+    "position_min_sigma_step_fraction": 0.35,
+    "position_kernel_sigma_radius": 4.0,
+    "position_kernel_min_radius": 2,
+    "edge_mass_threshold": 0.01,
+    "position_edge_cells": 3,
+    "rate_edge_cells": 2
+  },
+  "data_fingerprint": "0bddbae8636398507afb2566bd6a6e0855b72865d5f17aecff979e31a2c2625d",
+  "data_fingerprint_algorithm": "sha256(sorted_file_name_nul_file_bytes_nul)",
+  "total_suffix_rows": 3783989,
+  "required_smoke_wells": 6,
+  "smoke_well_count": 6,
+  "selection_method": "suffix_row_count_quantiles",
+  "selection_positions": [
+    0,
+    154,
+    308,
+    463,
+    617,
+    772
+  ],
+  "selected_wells": [
+    "fba7683c",
+    "fef8af96",
+    "8bb9c1e6",
+    "722cf0d8",
+    "ff8bb73a",
+    "ea3a0e38"
+  ],
+  "total_training_wells": 773,
+  "runtime_seconds": 104.028,
+  "projected_two_candidate_hours": 3.722841881765357,
+  "peak_rss_gib": 0.29308319091796875,
+  "max_projected_hours": 8.0,
+  "max_peak_rss_gib": 8.0,
+  "eligible_for_full_cv": true,
+  "records": [
+    {
+      "well": "fba7683c",
+      "suffix_rows": 407,
+      "runtime_seconds": 1.747,
+      "expanded_corridor": false,
+      "final_half_width": 64.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    },
+    {
+      "well": "fef8af96",
+      "suffix_rows": 3826,
+      "runtime_seconds": 21.328,
+      "expanded_corridor": true,
+      "final_half_width": 128.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    },
+    {
+      "well": "8bb9c1e6",
+      "suffix_rows": 4546,
+      "runtime_seconds": 19.263,
+      "expanded_corridor": false,
+      "final_half_width": 64.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    },
+    {
+      "well": "722cf0d8",
+      "suffix_rows": 5143,
+      "runtime_seconds": 18.999,
+      "expanded_corridor": false,
+      "final_half_width": 64.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    },
+    {
+      "well": "ff8bb73a",
+      "suffix_rows": 5927,
+      "runtime_seconds": 23.964,
+      "expanded_corridor": true,
+      "final_half_width": 128.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    },
+    {
+      "well": "ea3a0e38",
+      "suffix_rows": 10052,
+      "runtime_seconds": 18.727,
+      "expanded_corridor": false,
+      "final_half_width": 64.0,
+      "any_candidate_unresolved_position_boundary": false,
+      "any_candidate_unresolved_rate_boundary": true
+    }
+  ],
+  "failures": []
+}

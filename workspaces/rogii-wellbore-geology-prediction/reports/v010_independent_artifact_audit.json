@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "version": "v010",
+  "verified_at": "2026-07-15T17:44:03Z",
+  "status": "verified_score_contract_incomplete",
+  "decision": "exhausted",
+  "candidate_eligible": false,
+  "eligible_as_parent_run": false,
+  "score_verification": {
+    "rows": 3783989,
+    "wells": 773,
+    "duplicate_ids": 0,
+    "duplicate_well_row_indices": 0,
+    "pooled_rmse_recomputed": 11.618123708419397,
+    "pooled_rmse_recorded": 11.618123708419397,
+    "fold_scores_recomputed": [
+      11.4776267066815,
+      10.875539349020285,
+      11.349738027272373,
+      12.13344228806484,
+      12.200628074768737
+    ],
+    "fold_scores_exact": true,
+    "folds_better_than_v009": 5,
+    "absolute_improvement_over_v009": 0.015870113209954795,
+    "relative_improvement_over_v009_percent": 0.13641156642570892,
+    "passed_predeclared_11_50_gate": false
+  },
+  "algorithm_integrity": {
+    "all_six_fits_have_31_unique_supports": true,
+    "all_direct_sse_checks_pass": true,
+    "input_hashes_stable": true,
+    "raw_test_fingerprint_stable": true,
+    "output_hashes_match_run": true,
+    "alignment_violations": 0,
+    "progress_violations": 0,
+    "support_audit_violations": 0,
+    "direct_sse_violations": 0,
+    "partial_artifacts": 0,
+    "test_inference_forbidden": true,
+    "test_predictions_present": false,
+    "submitted": false
+  },
+  "artifact_contract_gaps": [
+    "The original in-run v010_artifact_audit.json was written before the staging directory commit and could have contradicted a late failed run. It is now marked superseded.",
+    "The original in-run audit assigned verified_no_blocker without conditioning on zero integrity violations. The actual completed run has zero violations, but the implementation contract is unsafe for reuse.",
+    "models/v010/feature_list.txt records only the five canonical streams and omits ten outer-specific nested formation columns used by meta fits.",
+    "models/v010/run.json omits required git_commit, git_dirty_paths, reproduction_command, random_seed, cv_splitter, fold_manifest path, id_column, and explicit feature paths."
+  ],
+  "non_authoritative_provenance_addendum": {
+    "git_commit_observed_after_run": "34c4e4aa4a6f3e489515aacd2bcd4ad351e9836c",
+    "reproduction_command": "uv run --with-requirements workspaces/rogii-wellbore-geology-prediction/requirements-beam.txt python workspaces/rogii-wellbore-geology-prediction/scripts/rogii_progress_simplex.py --workspace workspaces/rogii-wellbore-geology-prediction train --version v010 --folds 5",
+    "random_seed": null,
+    "cv_splitter": "canonical row-balanced GroupKFold by well; nested formation meta streams",
+    "fold_manifest": "reports/canonical_outer_folds_v001.csv",
+    "id_column": "id",
+    "feature_paths": [
+      "data/features/v004.parquet",
+      "data/features/v005.parquet"
+    ],
+    "note": "This addendum aids diagnosis but does not mutate or repair the completed hashed run."
+  },
+  "sha256": {
+    "scripts/rogii_progress_simplex.py": "c5cd5c01b8054198757097a292f1957a4bff400a509ca022f53f92e8da7edf81",
+    "reports/v010_progress_shaped_hmm_plan.md": "ff6be101ca31fae7e1afe0601016ed479eb1d69731645878b4fb333b8e767862",
+    "models/v010/run.json": "5e8a7b43ee707a11cb4c73893c42960b6d7a553eea92ea8b86322867975899ff",
+    "models/v010/cv_scores.json": "44cf60e4b63779fe78e9caeefe126b7eae7ef3cc08e73b2669b751738be9ff37",
+    "models/v010/oof_preds.npy": "8bf1c2ec76d418e3cf24c4c074d4d6f64b5d56b390b59190f3e96a57211ac679",
+    "models/v010/oof_rows.parquet": "a6b472e34e0e191ec715f7f60a2ad5577983cdf0f85e0c8e1c4f850df0904567",
+    "models/v010/model.pkl": "7bb8d21b3b555fe2b9fd67fcc1df8e5bf85c3a36c1e3b2ce44d5d9c6419ed991",
+    "models/v010/feature_list.txt": "37d23f3172b4e38c86c3d97e97b712ca13248db01deb70b6c0db89eb44ef8b8f",
+    "models/v010/importance.csv": "65820ae5627ef96abebe1445ec10f22e3efbf3fc4aff0c2cddb009c933c67a85",
+    "reports/v010_progress_simplex_summary.md": "2b17743d666f3e05212de3f994ab55b95f32e16a0b6c7031ce510bfe5279e8fd",
+    "reports/v010_progress_simplex_folds.csv": "74aaf41c3be6ebab43f1d42d491033691966a391a2a070278fbcc8b74013f3e0",
+    "reports/v010_progress_simplex_by_well.csv": "54e44eef9b5fc7a584f1df2814160f45573aeca5f8fd1b1ad9aa852f0d72a6ab",
+    "reports/v010_progress_simplex_diagnostics.json": "42540eab4a76b074143f950829a011c7f1fa46d3e7ee2066dac7f913a36173e5",
+    "reports/v010_artifact_audit.json": "2b96e80fe87fb1a6490ac8a23a858dc94e92c3b777c7d77183ed3caf4bfd6985"
+  }
+}

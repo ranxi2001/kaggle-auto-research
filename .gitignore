@@ -48,6 +48,12 @@ Thumbs.db
 !workspaces/rogii-wellbore-geology-prediction/reports/*.json
 !package.json
 
+# Large/generated experiment diagnostics stay local; commit concise summaries and audits instead.
+workspaces/*/reports/*_diagnostics.json
+workspaces/*/reports/*_candidates_by_well.csv
+workspaces/*/reports/*_by_well.csv
+workspaces/*/reports/*_formation_candidate_scan.csv
+
 # Kaggle
 kaggle.json
 
