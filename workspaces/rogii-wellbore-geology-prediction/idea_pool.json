@@ -1,11 +1,14 @@
 {
   "competition": "rogii-wellbore-geology-prediction",
-  "updated_at": "2026-07-13T16:13:14Z",
+  "updated_at": "2026-07-14T17:28:15Z",
   "ideas": [
     {"id": "beam_alignment", "status": "validated", "result_version": "v002"},
     {"id": "regularized_residual_lgbm", "status": "validated", "result_version": "v003"},
     {"id": "beam_residual_blend", "status": "submitted_below_medal_range", "result_version": "v004", "public_lb": 14.683},
-    {"id": "fold_robust_weighting", "status": "pending", "reason": "hard fifth fold and heterogeneous well gains"},
-    {"id": "leaderboard_calibration", "status": "completed", "result_version": "v004", "submission_ref": 54653094, "rank": 3628}
+    {"id": "fold_robust_weighting", "status": "pending", "reason": "heterogeneous well gains; reassess on the canonical row-balanced manifest because prior fold numbers were not cross-version comparable"},
+    {"id": "leaderboard_calibration", "status": "completed", "result_version": "v004", "submission_ref": 54653094, "rank": 3628},
+    {"id": "latent_surface_particle_filter", "status": "submitted_below_top10", "result_version": "v006", "invalid_attempt_version": "v005", "overall": 12.184563279387687, "public_lb": 10.693, "rank": 2940, "submission_ref": 54693365, "reason": "v005 was invalidated because missing suffix GR was treated as observed evidence; corrected v006 improved public RMSE by 27.17% versus v004 but remains outside top 10%"},
+    {"id": "latent_surface_leaderboard_calibration", "status": "completed", "result_version": "v006", "local_cv": 12.184563279387687, "public_lb": 10.693, "local_minus_public": 1.491563279387687, "submission_ref": 54693365},
+    {"id": "latent_surface_hmm_smoother", "status": "pending", "reason": "v006 validates the latent-surface direction but public RMSE 10.693 remains above the 7.120 top-10% boundary; add full forward-backward smoothing and windowed GR registration"}
   ]
 }

@@ -1,0 +1,41 @@
+{
+  "competition": "rogii-wellbore-geology-prediction",
+  "model_version": "v006",
+  "kernel": "ranxi169/kar-rogii-v006-latent-surface-particle-filter",
+  "kernel_version": 1,
+  "kernel_url": "https://www.kaggle.com/code/ranxi169/kar-rogii-v006-latent-surface-particle-filter",
+  "is_private": true,
+  "enable_internet": false,
+  "enable_gpu": false,
+  "status": "complete",
+  "last_run_at": "2026-07-14T16:24:22.183Z",
+  "verified_at": "2026-07-14T16:26:59Z",
+  "visible_test_wells": 3,
+  "output_rows": 14151,
+  "fallback_wells": 0,
+  "runtime_seconds": 26.599,
+  "output_csv_sha256": "dec9ddc329ca97ebfee15a6d3118d1afed302f104b6eea6832fdf4a97c2504e3",
+  "local_candidate_csv_sha256": "dec9ddc329ca97ebfee15a6d3118d1afed302f104b6eea6832fdf4a97c2504e3",
+  "output_matches_local_candidate": true,
+  "retrieval_contract": "Kaggle CLI 2.2.3 status/output resolve the slug's latest session even when a version suffix is supplied; version 1 was the only version and the slug was frozen during retrieval",
+  "log_warnings": [
+    "nbformat MissingIDFieldWarning",
+    "debugger frozen-modules warning",
+    "nbconvert dependency SyntaxWarning"
+  ],
+  "execution_errors": [],
+  "competition_submission_history_verified_at": "2026-07-14T17:28:15Z",
+  "competition_submission_refs": [
+    54693365,
+    54653094
+  ],
+  "latest_competition_submission_model_version": "v006",
+  "submitted": true,
+  "kaggle_submission_id": 54693365,
+  "submission_status": "complete",
+  "submitted_at": "2026-07-14T16:48:49.333Z",
+  "lb_score": 10.693,
+  "rank": 2940,
+  "leaderboard_teams": 4909,
+  "score_verified_at": "2026-07-14T17:28:15Z"
+}

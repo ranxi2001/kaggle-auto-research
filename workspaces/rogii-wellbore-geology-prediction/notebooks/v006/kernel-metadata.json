@@ -1,0 +1,16 @@
+{
+  "id": "ranxi169/kar-rogii-v006-latent-surface-particle-filter",
+  "title": "KAR ROGII v006 Latent Surface Particle Filter",
+  "code_file": "rogii-v006.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "competition_sources": [
+    "rogii-wellbore-geology-prediction"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

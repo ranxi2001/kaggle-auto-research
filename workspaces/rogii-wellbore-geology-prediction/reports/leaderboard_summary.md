@@ -1,24 +1,32 @@
 # ROGII Leaderboard Summary
 
-Snapshot: 2026-07-13 16:11 UTC. Metric is RMSE; lower is better.
+Snapshot: 2026-07-14 17:25 UTC. Metric is RMSE; lower is better.
 
 | Field | Value |
 |---|---:|
-| Kaggle submission ref | 54653094 |
-| Kernel | `ranxi169/kar-rogii-v004-grouped-residual-beam-ensemble` |
+| Kaggle submission ref | 54693365 |
+| Kernel | `ranxi169/kar-rogii-v006-latent-surface-particle-filter` |
 | Kernel version | 1 |
-| Public LB RMSE | 14.683 |
-| Current rank | 3,628 / 4,829 |
-| Local pooled OOF RMSE | 14.743751 |
-| Kaggle-run pooled CV RMSE | 14.903702 |
-| Top-10% reference rank | 483 |
-| Score at top-10% reference | 7.154 |
+| Submission status | `COMPLETE` |
+| Public LB RMSE | **10.693** |
+| Current rank | **2,940 / 4,909** |
+| Local pooled OOF RMSE | 12.184563 |
+| Local minus public | 1.491563 |
+| Prior v004 public RMSE | 14.683 |
+| Public improvement vs v004 | 3.990 RMSE / 27.17% |
+| Prior v004 rank | 3,628 / 4,829 |
+| Top-10% reference rank | 491 |
+| Score at top-10% reference | 7.120 |
 
-The public LB score is 0.060751 better than local OOF, so the split is directionally calibrated at
-this score level. However, rank 3,628 is not competitive for a medal. Even the broad top-10%
-reference is 7.529 RMSE better, which is too large to close with blend-weight or small tree-model
-tuning.
+Submission ref `54693365` completed from private kernel version 1 with public RMSE 10.693. This is a
+material improvement over v004's 14.683 and confirms that the latent-surface particle-filter
+direction transfers to hidden data. Public performance is 1.491563 better than the strict grouped
+OOF estimate, so the local gate was conservative for this submission.
 
-The next viable branch must change the core inference model: stronger GR/typewell registration,
-trajectory/dip priors, or a genuinely learned sequence model with fully nested validation. A second
-submission should be reserved until one of those directions produces a large grouped-CV gain.
+The model remains outside the competitive region: rank 2,940 of 4,909 and 3.573 RMSE behind the
+top-10% reference. A second small blend or tree-model adjustment is not justified. The next core
+experiment should keep the validated `U = TVT + Z` state representation while replacing causal
+single-point filtering with a full forward-backward HMM/smoother and windowed GR registration.
+
+The private leaderboard score is unavailable before competition close. No submission after ref
+`54693365` has been made.

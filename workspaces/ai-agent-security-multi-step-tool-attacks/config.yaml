@@ -1,0 +1,31 @@
+competition:
+  deadline: ''
+  metric: agents_security_metric
+  metric_direction: minimize
+  name: ai-agent-security-multi-step-tool-attacks
+  type: llm
+  url: https://www.kaggle.com/competitions/ai-agent-security-multi-step-tool-attacks
+data:
+  id_column: id
+  sample_submission: data/raw/sample_submission.csv
+  target_column: target
+  test: data/raw/test.csv
+  train: data/raw/train.csv
+model:
+  cv_folds: 5
+  cv_strategy: group_kfold
+  primary: lightgbm
+  seed: 42
+pipeline:
+  iteration_limit: 10
+  stages:
+  - research
+  - eda
+  - features
+  - train
+  - evaluate
+  - submit
+submission:
+  auto_submit: false
+  best_threshold: 0.01
+  max_daily: 5

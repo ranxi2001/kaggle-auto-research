@@ -1,0 +1,31 @@
+competition:
+  deadline: ''
+  metric: roc_auc
+  metric_direction: minimize
+  name: autonomous-agent-prediction-beta
+  type: llm
+  url: https://www.kaggle.com/competitions/autonomous-agent-prediction-beta
+data:
+  id_column: id
+  sample_submission: data/raw/sample_submission.csv
+  target_column: target
+  test: data/raw/test.csv
+  train: data/raw/train.csv
+model:
+  cv_folds: 5
+  cv_strategy: group_kfold
+  primary: lightgbm
+  seed: 42
+pipeline:
+  iteration_limit: 10
+  stages:
+  - research
+  - eda
+  - features
+  - train
+  - evaluate
+  - submit
+submission:
+  auto_submit: false
+  best_threshold: 0.01
+  max_daily: 5

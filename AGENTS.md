@@ -2,6 +2,19 @@
 
 kaggle-auto-research 的 Agent 系统设计与实战约束。
 
+## Loop Engineer 循环契约
+
+根目录 `PROGRESS.md` 是跨会话、跨 workspace 的短期交接记忆。它只记录当前主线、已验证状态、阻塞点、已排除路径、下一步和停止条件，不是日报或实验数据库。
+
+每个新会话或上下文交接必须：
+
+1. 先读取 `AGENTS.md`。
+2. 再读取 `PROGRESS.md`，确认 active workspace、当前 gate 和已有用户决策。
+3. 执行多步工程或竞赛循环时，在第一个有意义的修改前将 `Current Loop` 更新为实际任务。
+4. 结束前只写入已验证事实、证据路径、未解风险和唯一明确的下一步；删除已过期的短期状态，不追加终端滚屏或聊天摘要。
+
+`PROGRESS.md` 只负责指向事实：比赛配置仍以 workspace `config.yaml` 为准，实验和提交结论必须落到 `models/`、`reports/`、`journal.json`、`idea_pool.json` 和 `.state/` 等稳定产物中。不得只依赖聊天历史或 `PROGRESS.md` 中的摘要替代原始证据。
+
 ## Agent 角色分工
 
 ```text

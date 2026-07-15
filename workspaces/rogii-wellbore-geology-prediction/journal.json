@@ -2,20 +2,22 @@
   "competition": "rogii-wellbore-geology-prediction",
   "metric": "rmse",
   "direction": "minimize",
-  "updated_at": "2026-07-13T16:13:14Z",
-  "best_version": "v004",
+  "updated_at": "2026-07-14T17:28:15Z",
+  "best_version": "v006",
   "experiments": [
     {"version": "v001", "parent": null, "status": "completed", "overall": 15.909852870734554},
     {"version": "v002", "parent": "v001", "status": "completed", "overall": 15.691114956676921},
     {"version": "v003", "parent": "v002", "status": "completed", "overall": 14.787502061307364},
-    {"version": "v004", "parent": "v003", "status": "submitted", "overall": 14.74375058468573, "public_lb": 14.683, "rank": 3628, "submission_ref": 54653094}
+    {"version": "v004", "parent": "v003", "status": "submitted", "overall": 14.74375058468573, "public_lb": 14.683, "rank": 3628, "submission_ref": 54653094},
+    {"version": "v005", "parent": "v004", "status": "failed", "error": "SIGTERM after audit found interpolated missing GR was incorrectly treated as observed evidence", "processed_wells": 230, "total_wells": 773, "partial_feature_valid": false},
+    {"version": "v006", "parent": "v004", "status": "submitted", "overall": 12.184563279387687, "decision": "candidate_ready", "folds_better_than_v004": 5, "final_candidate": "pf_scale_12_hold_0p2", "fallback_wells": 0, "supersedes": "v005", "kernel": "ranxi169/kar-rogii-v006-latent-surface-particle-filter", "kernel_version": 1, "kernel_status": "complete", "submission_ref": 54693365, "submission_status": "complete", "public_lb": 10.693, "rank": 2940, "submitted": true}
   ],
   "leaderboard": {
-    "teams": 4829,
-    "kernel": "ranxi169/kar-rogii-v004-grouped-residual-beam-ensemble",
+    "teams": 4909,
+    "kernel": "ranxi169/kar-rogii-v006-latent-surface-particle-filter",
     "kernel_version": 1,
-    "submission_ref": 54653094,
-    "public_score": 14.683,
-    "rank": 3628
+    "submission_ref": 54693365,
+    "public_score": 10.693,
+    "rank": 2940
   }
 }

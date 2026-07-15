@@ -4,7 +4,7 @@
 
 - 登记日期：2026-07-10
 - 信息快照：Kaggle 官方 API 和竞赛页面，初始于 2026-07-10，最新核验于 2026-07-14
-- 当前状态：`skill-lift` 已提交；ROGII v004 已完成真实提交，public RMSE 14.683，当前不在牌区
+- 当前状态：`skill-lift` 已提交；ROGII v006 已完成真实提交，public RMSE 10.693，rank 2940 / 4909，仍不在 top 10%
 - 启动约束：选择并切换具体竞赛前需要用户确认；启动后所有产物必须写入 `workspaces/<competition>/`
 - 截止时间：均为 UTC；临近启动时必须重新查询截止时间、报名状态、规则和数据可用性
 
@@ -16,20 +16,20 @@
 | URL | https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction |
 | Track | Grouped regression over horizontal-well trajectories and reference logs |
 | Category | Featured |
-| Status | `submitted_below_medal_range` - v004 code submission complete, public RMSE 14.683, rank 3628 / 4829 |
+| Status | `submitted_improved_below_top10` - v006 code submission complete, public RMSE 10.693, rank 2940 / 4909 |
 | Entry deadline | 2026-07-29 23:59 UTC |
 | Final deadline | 2026-08-05 23:59 UTC |
 | Reward | USD 50,000 |
 | Awards points | Yes; official API reports `awards_points=true` |
-| Teams at 2026-07-13 16:11 UTC snapshot | 4,829 |
+| Teams at 2026-07-14 17:25 UTC snapshot | 4,909 |
 | Metric | RMSE, minimize |
 | Submission | Kaggle Notebook only; offline runtime at most 9 hours; output `submission.csv` with `id,tvt` |
 | Data | About 1.23 GiB across 2,327 files: 773 train wells with CSV/log/image triplets and a hidden test of about 200 wells |
 | Why recommended | The only currently open standard prediction task found with both an explicit local metric and competition points/medals enabled |
 | Main risks | Crowded leaderboard, short runway, domain-specific well correlation, hidden code test, and potential leakage around partially observed `TVT_input` |
-| Local result | v004 pooled well-GroupKFold RMSE 14.743751, 7.33% below the v001 last-known baseline |
-| Real submission | Ref 54653094, kernel v1, public RMSE 14.683, rank 3628 / 4829 |
-| Next gate | Require a materially better grouped-CV sequence-alignment model before spending the second daily submission |
+| Local result | v006 pooled well-GroupKFold RMSE 12.184563, canonical 5 / 5 folds better than v004 |
+| Real submission | Ref 54693365, latent-surface kernel v1, public RMSE 10.693, rank 2940 / 4909; v004 was 14.683 |
+| Next gate | Keep latent `U = TVT + Z`; require a fully nested HMM/smoother with windowed GR registration before another submission |
 
 ## Practice Only: Predicting Student Health Risk
 
@@ -162,3 +162,4 @@ This priority contains two related competitions. They remain separate candidates
 | 2026-07-13 | Official Kaggle API checks identified Featured competition `rogii-wellbore-geology-prediction` as the best open medal-eligible task with a standard metric: RMSE and `awards_points=true`. No workspace was created, no rules were accepted, and no data was downloaded pending user confirmation. |
 | 2026-07-13 | The user accepted ROGII rules and confirmed the switch. Full-data well GroupKFold produced v004 RMSE 14.743751 versus 15.909853 for v001; a private offline notebook package passed local contract checks. No notebook was pushed and no real submission was made. |
 | 2026-07-14 | User approved upload and submission. Private kernel v1 completed and submission ref 54653094 scored public RMSE 14.683, rank 3628 / 4829; the result validates the pipeline but is outside medal range. |
+| 2026-07-15 | User approved v006 kernel build and submission. Ref 54693365 scored public RMSE 10.693, rank 2940 / 4909, a 27.17% improvement over v004; the next branch is a latent-surface HMM/smoother because top-10% is still 7.120. |

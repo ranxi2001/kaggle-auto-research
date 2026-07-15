@@ -1,7 +1,8 @@
 # ROGII Wellbore Geology Prediction Research Notes
 
-Snapshot: 2026-07-13 UTC. Sources are the official Kaggle competition API, competition pages,
-organizer materials, and the downloaded competition files.
+Research snapshot: 2026-07-13 UTC. Local experiment state updated: 2026-07-14 UTC. Sources are the
+official Kaggle competition API, competition pages, organizer materials, and the downloaded
+competition files.
 
 ## Competition Contract
 
@@ -35,11 +36,13 @@ ID alignment, and output format. Their training targets do not participate in mo
 
 ## Validation Design
 
-Rows from the same well are dependent, so all learned candidates use five-fold GroupKFold by
-`_well_id`. Features may use the validation well's own observed `TVT_input` prefix and all visible
-GR/trajectory values because those inputs are present at hidden-test inference. They never use the
-validation suffix's `TVT`. The primary score is pooled OOF RMSE across all 3,783,989 scored rows;
-fold mean and per-well scores are diagnostic only.
+Rows from the same well are dependent, so learned candidates use a canonical five-fold GroupKFold
+manifest balanced by scored-row count and grouped by well. Features may use the validation well's
+own observed `TVT_input` prefix and all visible GR/trajectory values because those inputs are
+present at hidden-test inference. They never use the validation suffix's `TVT`. The primary score
+is pooled OOF RMSE across all 3,783,989 scored rows; fold mean and per-well scores are diagnostic
+only. Parameter comparisons for v006 are selected from the other four outer folds before each
+validation fold is scored.
 
 The v001 baseline extends the last finite `TVT_input` value through the missing suffix. GR beam
 alignment then maps the horizontal GR sequence to each well's typewell reference. The learned
@@ -48,22 +51,31 @@ target-independent trajectory, GR, prefix-anchor, typewell, and beam features.
 
 ## Current Candidate
 
-The best local candidate is v004: 17.5% v002 nested-CV GR beam and 82.5% v003 grouped residual
-LightGBM. Its pooled OOF RMSE is 14.743751, versus 15.909853 for v001, a 7.33% relative reduction.
-The fixed beam feature parameters were first identified from full-data target scans, and the
-ensemble weight was selected on the same OOF predictions used for reporting. The v003/v004 scores
-therefore have selection optimism and are not fully nested estimates; leaderboard calibration
-remains necessary.
+The best valid local candidate is v006, a latent-surface particle filter over
+`U = TVT + Z` and its dip rate. It uses the visible prefix to initialize the state, the paired
+typewell GR as the emission reference, and the real MD/Z trajectory for propagation. Non-finite
+suffix GR rows skip the measurement update rather than receiving interpolated evidence. The fixed
+candidate `pf_scale_12_hold_0p2` was selected independently by all five nested outer-fold choices.
 
-A self-contained, private, internet-disabled notebook package exists under `notebooks/v004/`. Kaggle
-kernel version 1 completed in about 11.4 minutes, dynamically discovered the mounted data, trained
-from competition data, mapped predictions to runtime sample IDs, and wrote only `submission.csv`.
-Submission ref 54653094 completed with public RMSE 14.683 and rank 3628 of 4829 teams.
+v006 pooled OOF RMSE is 12.184563, versus 14.743751 for v004 and 15.909853 for v001. It improves all
+five canonical v004 folds, has zero fallback wells, and passes the predeclared local candidate gate.
+The preceding v005 attempt has no valid CV score: audit stopped it at 230 of 773 wells because it
+treated interpolated missing GR as observed evidence. Its partial feature parquet must not be used.
+
+With explicit user authorization, v006 private kernel version 1 was submitted as ref 54693365. It
+completed at public RMSE 10.693, rank 2940 of 4909, versus v004 public RMSE 14.683. The 27.17%
+public improvement confirms that the latent-surface direction transfers to hidden data, while the
+1.491563 advantage over grouped OOF shows that this local estimate was conservative for v006.
 
 ## Residual Risks
 
 - GroupKFold measures generalization to unseen wells but cannot reproduce the hidden well mix.
-- The fifth fold is materially harder than the others, so well-distribution shift remains visible.
-- Beam-feature and blend choices are not fully nested; v003 is the fallback candidate.
-- The first leaderboard calibration is directionally consistent with local CV but far outside the
-  current medal range; a materially different sequence-alignment strategy is required.
+- v006 is a causal particle filter, not a full forward-backward smoother; repeated GR motifs can
+  still cause path ambiguity and the 20% last-known hold is only a global shrinkage choice.
+- The 1,200,837 missing suffix GR rows receive transition-prior propagation only. Long missing runs
+  therefore depend heavily on the prefix dip-rate estimate and motion model.
+- The fixed grid is fully nested for the reported outer score, and the first LB calibration is
+  directionally strong, but one public result does not establish robustness to the private split.
+- V006 public RMSE 10.693 remains 3.573 above the 7.120 top-10% boundary. The next core direction is
+  a full latent-surface HMM/forward-backward smoother with windowed GR registration, not another
+  small blend or tree-model adjustment.
